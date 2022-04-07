@@ -10,62 +10,61 @@
 
 ***
 #### Просмотр настроек
->git config --list
+    git config --list
 
 ***
 #### Превратить каталог, который не находится под
 #### версионным контролем, в репозиторий Git
->git init
+    git init
 
 ***
 #### Индексировать измененный файл
->git add
+    git add
 #### Индексировать измененные файлы
->git add .
+    git add .
 
 ***
 #### Удаление индексации файла
->git rm -cashed имя_файла
+    git rm -cashed имя_файла
 #### Удаление из индекса и из проекта
->git rm -f имя_файла
+    git rm -f имя_файла
 
 ***
 ***
 ### Просмотр изменений
->git status
+    git status
 ***
 ***
 #### Фиксация изменения в локальное хранилище
 #### В коммит попадут (будут сохранены) только файлы, 
 #### которые были проиндексированы командой git add
-> git commit -m "комментарии к коду"
+    git commit -m "комментарии к коду"
 ***
 #### Просмотр истории коммитов
->git log
+    git log
 
 ***
 ### Связываение локального репозитория с GitHub 
->git remote add origin
-git@github.com:my_name/my_repo.git
+    git remote add origin git@github.com:my_name/my_repo.git
 #### Где my_name – имя пользователя на GitHub 
-my_repo – название созданного репозитория
+####my_repo – название созданного репозитория
 #### Проверка свызывания  
->git remote get-url origin 
+    git remote get-url origin 
 #### Удаление свызывания  
->git remote remove origin
+    git remote remove origin
 
 ***
 #### Отправка изменений в удаленный 
 #### репозиторий origin ветки master
->git push origin master
+    git push origin master
 
 #### Отправка изменений c текущей ветки
->git push
+    git push
 #### Получение изменений
->git pull
+    git pull
 ***
 #### Клонировать существующий репозиторий
->git clone ссылка-на-репозиторий
+    git clone ссылка-на-репозиторий
 ***
 ***
 #### Литература:
