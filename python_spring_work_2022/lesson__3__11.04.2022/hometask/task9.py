@@ -16,9 +16,22 @@
 x = 5
 y = 10
 z = 3
-print('Max =', max(z, y, z))
+#print('Max =', max(z, y, z))
+if x > y and z:
+    print("Наибольшее число х: ", х)
+elif y > x and z:
+    print("Наибольшее число y: ", y)
+else:
+    print("Наибольшее число z: ", z)
+
 
 x = 10
 y = 12
 z = -7
-print('Min =', min(x, y, z))
+#print('Min =', min(x, y, z))
+if x > y and z:
+    print("Наибольшее число х: ", х)
+elif y > x and z:
+    print("Наибольшее число y: ", y)
+else:
+    print("Наибольшее число z: ", z)
