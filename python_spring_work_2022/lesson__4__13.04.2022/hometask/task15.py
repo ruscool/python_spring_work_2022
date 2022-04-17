@@ -41,7 +41,7 @@ desc_ = ["Это слово обозначает наименьшую автон
          "Костное образование, во множестве расположенное в ротовой полости большинства позвоночных "]
 word_random = str(random.choice(words))
 word_random_list = [word_random]
-print(words, word_random)  # удалить потом
+#print(words, word_random)  # подсказка - удалить потом
 print(desc_[words.index(word_random)])
 word_kod = "#" * len(word_random)
 print('Загаданное слово: ', ' '.join(word_kod))
@@ -81,8 +81,6 @@ while a > 0:
                     if i == letter:
                         count_list.append(word_random.index(letter, b))
                         b = count_list[-1] + 1
-                        sd = 4
-
                 if ord_letter in word_ord:  # есть есть индексы - меняем на буквы
                     for f in count_list:
                         # print(word_kod, f)
