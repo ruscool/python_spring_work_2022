@@ -10,12 +10,6 @@
 """
 import random
 
-
-def numbers():  # кость игральная от 1 до 6
-    "Подсчет"
-    pass
-
-
 def main(combi_main):
     "Основной расчет"
     s_list = []
@@ -27,12 +21,10 @@ def main(combi_main):
     tuple_list = sorted(tuple(s_list))
     return tuple_list
 
-
 def printing(result, variants):
     "Вывод результата"
     summa_print = sum(result)
     print("Сумма", summa_print, "комбинация", variants)
-
 
 def randoms():
     "Случайные числа"
