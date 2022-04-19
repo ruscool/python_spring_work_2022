@@ -42,45 +42,50 @@ def add_bufer(par_letter):
 def game_over(): return print("-" * 30, "\nИгра окончена")
 
 
-def find_and_test(letter, count_letter, a, b, count_list, ord_letter):
+def find_and_test(letter, count_letter, b, count_list, ord_letter):
+    global a
     if count_letter >= 1:  # ищем индексы и добавляем в список
         print("Есть такая буква")
         for i in word_random:
             if i == letter:
                 count_list.append(word_random.index(letter, b))
                 b = count_list[-1] + 1
-        if ord_letter in word_ord:  # есть есть индексы - меняем на буквы
+        if letter in word_random:  # если есть индексы - меняем на буквы
             for f in count_list:
                 # print(word_kod, f)
                 word_list[f] = word_random[f]
                 if "".join(word_list) == word_random:
-                    print("=" * 30, "\nУгадали все слово\n", "-" * 30)
-                    game_over()
+                    #print("a in find ", a)
+                    #a_in_find = 0
+                    print("=" * 30, "\nУгадали все слово - это", word_random, "\n", "-" * 30)
                     a = 0
+
         print(" ".join(word_list))  # вывод предварительный
     else:
         a -= 1
         print("-" * 30)
         print("Такой буквы здесь нет\nосталось попыток", a)
+    return a
 
 
-def main(letter, a):
-    if len(letter) > 1:
+def main(main_letter, a):
+    if len(main_letter) > 1:
         print("Введено больше одной буквы, заново, минус попытка")
         a -= 1
         print("Осталось попыток", a)
     else:
-        ord_letter = ord(letter)
+        ord_letter = ord(main_letter)
         if ord_letter in bufer:
             print("уже была эта буква, заново")
             print(" ".join(word_list))
         else:
-            add_bufer(letter)
+            add_bufer(main_letter)
 
-    return letter
+    return main_letter
 
 
 while a > 0:  # start game
+
     clist = []
     arg_b = 0
     arg_letter = entering()
@@ -89,6 +94,8 @@ while a > 0:  # start game
     main_game = main(arg_letter, a)
     arg_count_letter = word_random.count(main_game)
     ord_letter = bufer
-    find_and_test(main_game, arg_count_letter, a, arg_b, clist, ord_letter)
+    #print(a)
+    arg_a = a
+    end_game = find_and_test(main_game, arg_count_letter, arg_b, clist, ord_letter)
 else:
     game_over()
