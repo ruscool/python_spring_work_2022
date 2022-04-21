@@ -22,28 +22,34 @@ template = """
 """
 
 
-def change_html(words, text):
-    # print(template)
+def find_tag(words, text):
+    "Поиск и замена на тэги"
     for key in words.keys():
-        # print(key)
-        d = len(key)
-        find_first = text.find(key)
-        # print(key, d, find_first)
-        # quest = text.find(key) + d
-        ss = text.find("?", text.find(key) + d)  # индекс ?
         text = text.replace("?", "{" + key + "}", 1)
-
-        print(ss, text[43])
-        new_template = template[:ss] + key + template[ss + len(key):]
-        # ss += 1
-        qw = 3
-    print(text)
-    # print(new_template, end=" ")
-    # f = text.find(str("<" + words.keys(
+    return text
 
 
-def rec_file():
-    pass
+def change_html(text, tags):
+    "Форматирование html"
+    old_tags = tags.copy()
+    for key in old_tags.keys():
+        if key in tags.keys():
+            tags["{" + key + "}"] = tags.pop(key)
+    text = text.format(**old_tags)
+    return text
 
 
-change_html(page, template)
+def rec_file(tags):
+    "Запись данных в файл"
+    f = open("index.html", "w+")
+    f.write(tags)
+    f.seek(0) # вещь)
+    print(f.read())
+    f.close()
+
+
+first = find_tag(page, template)
+second = change_html(first, page)
+third = rec_file(second)
+
+# под конец кода - улыбка )))
