@@ -30,17 +30,29 @@ def open_file(alfa, file, lines):
     hz = ''.join([chr(i) for i in range(35, 48)])
     f = open(file, 'r')
     for i in range(lines):
+        l = []
         file = f.readline()
         new_line = file.lower().strip()
         for letter in new_line:
-            if letter in alfa: # шифрование русских букв
-                new_line = new_line.replace(letter, alfa[alfa.index(letter) - shag], 1)
+            if letter in alfa:  # шифрование русских букв
+                if not letter in l:
+                    new_line = new_line.replace(letter, alfa[alfa.index(letter) - shag])
+                    l.append(letter)
         for letter in new_line:
-            if letter in digi: # цифры
-                new_line = new_line.replace(letter, digi[digi.index(letter) - shag], 1)
+            if letter in digi:  # цифры
+                if not letter in l:
+                    new_line = new_line.replace(letter, digi[digi.index(letter) - shag])
+                    l.append(letter)
         for letter in new_line:
-            if letter in english: # английский алфавит
-                new_line = new_line.replace(letter, english[english.index(letter) - shag], 1)
+            if letter in english:  # английский алфавит
+                if not letter in l:
+                    new_line = new_line.replace(letter, english[english.index(letter) - shag])
+                    l.append(letter)
+        for letter in new_line:
+            if letter in hz:  # hz
+                if not letter in l:
+                    new_line = new_line.replace(letter, hz[hz.index(letter) - shag])
+                    l.append(letter)
         shag += 1
         print(new_line)
     f.close()
@@ -57,4 +69,3 @@ file = "message.txt"
 shifr = cezar_shifr()
 count_lines = count_line(file)
 open_file(shifr, file, count_lines)
-
