@@ -24,7 +24,7 @@ def create_csv(info, rows):
         else:
             f.write('\"' + i + '\"' + ',')
     for new_line in info:
-        f.write(str(info.index(new_line)) + ',\"' + new_line + '\"\n')
+        f.write(str(info.index(new_line) + 1) + ',\"' + new_line + '\"\n')
     f.seek(0)
     print(f.read())
     f.close()
