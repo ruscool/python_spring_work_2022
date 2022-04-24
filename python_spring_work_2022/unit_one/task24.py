@@ -23,21 +23,6 @@ def create_dict(alfa):
     return digi_dict
 
 
-def insert_digi_first(d_digi, s_first_line):
-    "Замена чисел на буквы"
-    l1 = list(s_first_line.split(" "))
-    i_index = 0
-    for i in l1:
-        pass
-        for key in d_digi.keys():  # dict
-            if i == str(key):
-                l1[i_index] = d_digi[key]
-                break
-        i_index += 1
-    s_first_line = "".join(l1)
-    return s_first_line
-
-
 def insert_digi_second(d_digi, s_second_line):
     "Замена чисел на буквы 2"
     l2 = list(s_second_line.split(" "))
@@ -55,8 +40,6 @@ def insert_digi_second(d_digi, s_second_line):
 
 
 dict_alfa = create_dict(english)
-change_first = insert_digi_first(dict_alfa, first_line)
-change_second = insert_digi_second(dict_alfa, second_line)
 
-print(change_first)
-print(change_second)
+print(insert_digi_second(dict_alfa, first_line))
+print(insert_digi_second(dict_alfa, second_line))
