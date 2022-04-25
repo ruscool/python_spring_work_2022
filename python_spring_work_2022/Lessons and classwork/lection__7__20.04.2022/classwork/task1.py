@@ -5,6 +5,11 @@ text = "Написание теfghvgvjкстов для главных стра�
 
 
 def logger(par_text):
+    """
+
+    :param par_text:
+    :return:
+    """
     f = open("error.log", mode="a+t", encoding="utf-8")
 
     f.write(par_text + "\n")
@@ -12,3 +17,5 @@ def logger(par_text):
 
 
 logger(text)
+print(help(logger))
+
