@@ -46,26 +46,27 @@ def end_game():
     return print("Спасибо")
 
 
-
 def save_game(a, b, d):
     print("\nСохранить игру?", "\n1. - Продолжить", "\n2. - Сохранить игру и выйти")
-    save = int(input("Номер выбора "))
+    save = input("Номер выбора ")
+    if save.isdigit():
+        save = int(save)
+    else:
+        print("Выберите номер из списка")
+        return save_game(a, b, d)
     match save:
         case 1:
             return game(a, b, d)
         case 2:
-            print(2)
+            print(2)  # сохранить два файла - один пикл, второй логгер
             sl = "save_list.txt"
             file = "game_dump.pkl"
             to_pickle([a, b], file)
-            time = datetime.datetime.now()
-            print(time)
-            log = "Запись от " + str(time.now())
-
-            logger_two(log, sl)
+            logger_two(sl)
+            return end_game()
         case _:
-            print("Номер ")
-            save_game(a, b, d)
+            print("Номер? ")
+            return save_game(a, b, d)
 
 
 def load_game():
@@ -73,7 +74,7 @@ def load_game():
 
 
 def game(a, b, dobro):
-    print("b=", b)  # del
+    # print("b=", b)  # del
     if dobro == 0:
         print("Добро пожаловать")
         dobro = 1
@@ -83,6 +84,7 @@ def game(a, b, dobro):
     while a > 0:
         c = input("Угадай число от 0 до 100: ")
         if c == "s" or c == "S":
+            c = int(0)
             return save_game(a, b, d)
         else:
             if c.isdigit():
