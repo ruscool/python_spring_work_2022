@@ -21,20 +21,29 @@
 import random, datetime
 from workplace.serializer import to_pickle
 from workplace.deserializer import from_pickle
-from workplace.loggers import logger_two
+
+FILE = "game_dump.pkl"
 
 
 def begin():
+    global FILE
+    file = FILE
     print("1. Новая игра", "\n2. Восстановить игру", "\n3. Выход")
-    menu = int(input("Ваш выбор: "))
+    menu = input("Введите номер: ")
     a = 10
     b = random.randint(0, 100)
     d = 0
+    # file = "game_dump.pkl"
+    if not menu.isdigit():
+        return begin()
+    else:
+        menu = int(menu)
     while True:
         if menu == 1:
             return game(a, b, d)
         elif menu == 2:
-            return load_game()
+            load_game(file)
+            game(a, b, d)
         elif menu == 3:
             break
         else:
@@ -47,6 +56,8 @@ def end_game():
 
 
 def save_game(a, b, d):
+    global FILE
+    file = FILE
     print("\nСохранить игру?", "\n1. - Продолжить", "\n2. - Сохранить игру и выйти")
     save = input("Номер выбора ")
     if save.isdigit():
@@ -59,21 +70,38 @@ def save_game(a, b, d):
             return game(a, b, d)
         case 2:
             print(2)  # сохранить два файла - один пикл, второй логгер
-            sl = "save_list.txt"
-            file = "game_dump.pkl"
-            to_pickle([a, b], file)
-            logger_two(sl)
+
+            obj = from_pickle(file)
+            dt = datetime.datetime.now()
+            log = dt.strftime('%d%m%Y_%H%M%S')
+            new_dict = obj + [{log: [a, b, d]}]
+            print({log: [a, b, d]})
+            to_pickle(new_dict, file)
+            print("Игра сохранена под номером: ", log)
             return end_game()
         case _:
             print("Номер? ")
             return save_game(a, b, d)
 
 
-def load_game():
-    return print("load")
+def last_five():
+    pass
+
+
+def load_game(file):
+    obj = from_pickle(file)  # остановился - надо сделать выбор из посл 5 файлов - данные из словаря
+    number = "28042022_211107"
+    print(obj)
+    for i in obj:
+        if i == number:
+            print(True)
+            # a, b, d = number[0], number[1], number[2]
+            # return game(a, b, d, file)
 
 
 def game(a, b, dobro):
+    global FILE
+    file = FILE
     # print("b=", b)  # del
     if dobro == 0:
         print("Добро пожаловать")
@@ -92,7 +120,6 @@ def game(a, b, dobro):
             else:
                 print('Необходимо вводить цифры, для сохранения нажать "s""')
                 game(a, b, d)
-
         a -= 1
         if c == b:
             print("Угадали, конец игры")
