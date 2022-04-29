@@ -26,6 +26,10 @@ FILE = "game_dump.pkl"
 
 
 def begin():
+    """
+    Запуск и выбор игры
+
+    """
     global FILE
     file = FILE
     print("1. Новая игра", "\n2. Восстановить игру", "\n3. Выход")
@@ -43,21 +47,24 @@ def begin():
             return game(a, b, d, c)
         elif menu == 2:
             ll = load_game(file)  # список файлов для выбора
-            # print("ll", ll)
             return game(ll[0], ll[1], ll[2], c)
         elif menu == 3:
+            end_game()
             break
         else:
             print("Нет такого в меню, выберите заново")
             return begin()
 
 
-def end_game():
-    print("Спасибо")
-    return -1
-
-
 def save_game(a, b, d, c):
+    """
+    Сохранение игры или продолжение
+    :param a: кол-во попыток
+    :param b: загаданное число
+    :param d: приветствие
+    :param c: по умолч. 0
+    :return:
+    """
     global FILE
     file = FILE
     print("\nСохранить игру?", "\n1. - Продолжить", "\n2. - Сохранить игру и выйти")
@@ -75,7 +82,6 @@ def save_game(a, b, d, c):
             dt = datetime.datetime.now()
             log = dt.strftime('%d%m%Y_%H%M%S')
             new_dict[log] = [a, b, d]  # присваивание
-            # print({log: [a, b, d]})
             to_pickle(new_dict, file)
             print("Игра сохранена под номером: ", log)
             end_game()
@@ -86,18 +92,27 @@ def save_game(a, b, d, c):
 
 
 def last_five():
-    f = input("Выберите номер записи (от 1 до 5) ")
-    if f.isdigit():
-        f = int(f)
-        if f > 5 or f < 5:
-            f = 5
-    else:
+    """
+    Выбор из последних 5 сохранненых, иначе много выбирать
+    :return:
+    """
+    try:
+        f = int(input("Выберите номер записи (от 1 до 5) "))
+        if f < 1 or f > 5:
+            print("Введите от 1  до 5")
+            last_five()
+        return f
+    except ValueError:
         print("Не верный выбор, загружаем последнюю сохранненную игру")
-        f = 5
-    return f
+        last_five()
 
 
 def load_game(file):
+    """
+    Загрузка сохранненых игр
+    :param file:
+    :return:
+    """
     obj = from_pickle(file)
     count = len(obj)
     if count > 5:
@@ -113,57 +128,61 @@ def load_game(file):
         print(g + 1, new_list[g])
     # выбор файла
     f = last_five()
-    n_list = new_list[f - 1]
     # возврат списка значений останова игры
     for i, v in obj.items():
-        if i == n_list:
+        if i == new_list[f - 1]:
             return v
 
 
 def game(a, b, dobro, c):
+    """
+    Перебор вводимых значений
+    :param a:
+    :param b:
+    :param dobro:
+    :param c:
+    :return:
+    """
     if dobro == 0:
         print("Добро пожаловать")
         dobro = 1
     else:
         print("Число попыток осталось", a)
-
-    d = dobro
     while a > 0:
         c = input("Угадай число от 0 до 100: ")
         a -= 1
         if a == 0:
             print("Не угадали, попыток больше нет")
-            # end_game()
-            # break
             return -1
         if c == "s" or c == "S":
-            # a += 1
+            a += 1
             c = 0
-            return save_game(a, b, d, c)
+            return save_game(a, b, dobro, c)
         elif c.isdigit():
             c = int(c)
             if c == b:
-                # a = 0
-                # print(a)
                 print("Угадали, конец игры")
                 end_game()
                 break
-                # return end_game()
             elif c < b:
-
                 print("Нет, больше - еще", a, "попыток")
             elif c > b:
                 print("Нет, меньше - еще", a, "попыток")
         else:
             print('Необходимо вводить цифры, для сохранения нажать "s""')
-            # game(a, b, d)
     else:
         print("Не угадали, попыток больше нет")
         end_game()
     return -1
 
 
-r = 0
-if r == 0:
-    begin()
-    r = 1
+def end_game():
+    """
+    Заглушка
+    :return:
+    """
+    print("\nСпасибо, до свиданья")
+    return -1
+
+
+begin()
