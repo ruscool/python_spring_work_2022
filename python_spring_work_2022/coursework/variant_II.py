@@ -18,7 +18,6 @@ def merge_sort(A_list: list) -> list:
     :return: list
     """
     ind = 0
-    b = A[:]
     if len(A_list) % 2 != 0:
         A_list.append(abs(sum(A_list)))
         ind += 1
@@ -32,15 +31,11 @@ def merge_sort(A_list: list) -> list:
     for i in range(l_l):  # левая часть
         for j in range(l_l - i - 1):
             if l[j] > l[j + 1]:
-                per = l[j]
-                l[j] = l[j + 1]
-                l[j + 1] = per
+                l[j], l[j + 1] = l[j + 1], l[j]
     for i in range(l_r):  # правая часть
         for j in range(l_r - i - 1):
             if r[j] > r[j + 1]:
-                per = r[j]
-                r[j] = r[j + 1]
-                r[j + 1] = per
+                r[j], r[j + 1] = r[j + 1], r[j]
     # объединение
     ind_l, ind_r = 0, 0
     for i in range(len(A_list)):
