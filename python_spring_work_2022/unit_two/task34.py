@@ -3,18 +3,6 @@ import bcrypt
 import psycopg2 as ps
 
 
-# class Db:
-#     """Данный класс содержит конструктор и метод get_connect. В конструкторе инициализируются переменные
-#      (атрибуты доступа к БД). Метод возвращает соединение."""
-#     def __init__(self, dbname, user, password):
-#         self.name = dbname
-#         self.user = user
-#         self.password = password
-#
-#     def get_connect(self):
-#         # Метод возвращает соединение к БД
-#         pass
-
 class Db:
     def __init__(self, name, user, password):
         self.name = name
@@ -27,7 +15,7 @@ class Db:
                 cur.execute(f"""SELECT *  FROM profile
                     """)
                 res = cur.fetchall()
-                # print(res)
+
         return conn
 
 
@@ -48,38 +36,64 @@ class Profile:
 
     # в аргументе conn передается дискриптор подключения к БД
     def set_profile(self, conn):
-        # print('Введите логин и пароль')
-        # s_login = str(input('Логин '))
+        with conn.cursor() as cur:
+            print('Регистрация нового пользователя')
+            try:
+                cur.execute(f"""SELECT p.login  FROM profile p
+                    where p.login ='{self.login}'""")
+                res_login = cur.fetchone()
+                if self.login == res_login[0]:
+                    return 'Такой логин есть, введите новый логин'
+            except:
+                conn.rollback()
+
+            hashAndSalt = bcrypt.hashpw(self.password.encode(), bcrypt.gensalt())
+            hashAndSalt = hashAndSalt.decode('utf-8')
+            try:
+                cur.execute("""SELECT x.id_user FROM public."user_man" x
+                    ORDER BY x.id_user desc limit 1""")
+                res_user_count = cur.fetchone()
+                new_res_user = int(res_user_count[0]) + 1
+            except:
+                new_res_user = 1
+                conn.rollback()
+
+            cur.execute(
+                f"""insert into public."user_man" (id_user,first_name, ouch, last_name, email, phone) values \
+                ({new_res_user},'{self.f_name}','{self.ouch}','{self.l_name}','{self.email}',{self.tel});""")
+            conn.commit()
+            cur.execute(f"""insert into profile (id_profile,login,password,id_user_man) values \
+                ({new_res_user},'{self.login}','{hashAndSalt}',{new_res_user});
+                """)
+            print('Пользователь добавлен')
+            conn.commit()
+
+    def get_profile(self, conn):
         with conn.cursor() as cur:
             cur.execute(f"""SELECT p.login,p.password  FROM profile p
                            where p.login ='{self.login}'""")
             res_login = cur.fetchone()
             if res_login is None:
-                print('Нет такого пользователя, хотите зарегистрироваться?')
-                print('\n1. да', '\n2. нет')
-                choice = input()
-                if int(choice) == 1:
-                    return 2
-                elif choice == 2:
-                    return 'Хорошо, bye'
+                return 'Нет такого пользователя, хотите зарегистрироваться?'
             else:
-                s_password = input('password ')
-                valid = bcrypt.checkpw(s_password.encode(), res_login[1].encode())
+                valid = bcrypt.checkpw(self.password.encode(), res_login[1].encode())
                 if valid:
                     return f'Вы вошли под пользователем {self.login}'
                 else:
                     return 'Неверный пароль, попробуйте заново'
 
-    def get_profile(self, conn):
-        # Извлекает профиль из БД
-        pass
 
+# почти как по заданию :)
 
 if __name__ == "__main__":
     conn = Db('testsystem', 'testsystem', '1234test')
     conn = conn.get_connection()
-    print(conn)
+    # print(conn)
     print()
-    new_user = Profile('usr88', '1234test', 'Иван', 'Петрович', 'Сидоров', 29, 89234238937, 'ru@ru.com')
-    test = new_user.set_profile(conn)
-    print(test)
+    new_user = Profile('usr89', '1234test', 'Иван', 'Петрович', 'Сидоров', 29, 89234238937, 'ru@ru.com')
+
+    test = new_user.get_profile(conn)
+    print(test)  # проверка
+
+    add_user = new_user.set_profile(conn)
+    print(add_user)
