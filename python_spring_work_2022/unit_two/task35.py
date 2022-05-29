@@ -5,6 +5,7 @@ from time import sleep
 import bcrypt
 import psycopg2 as ps
 import os
+import datetime
 
 
 class Db:
@@ -124,17 +125,18 @@ class Testsystem:
     def __init__(self):
         self.questions_in_test = None
         self.num_list = self.show_list()
-        self.show_questions()
+        self.conn = Db('testsystem', 'testsystem', '1234test').get_connection()
+
+        # self.show_questions()
 
     def show_list(self):
         data = Test()
         self.data = data.get_list()
         print('Выберите номер теста')  # in View
-        l=[]
+        l = []
         for key in self.data:
             print(key[0], '-', key[1])
             l.append(key[0])
-        # print(l)
         print("\034", end="")
         try:
             self.test_number = int(input())
@@ -143,20 +145,49 @@ class Testsystem:
         except:
             print('Неправильно выбран номер теста, повторно выберите номер теста')
             self.show_list()
-        # todo: сделать выборку только из списка и запись начала теста в БД
-        # self.template = data
         return self.test_number
 
     def show_questions(self):
         print('\n' * 30)
-        # print(self.num_list)
         print(f'Выбран тест под номером {self.test_number} и вопросы к нему')
         get = Test()
         self.questions_in_test = get.get_questions(self.test_number)
-        # print(self.questions_in_test)
+        for i in self.questions_in_test:
+            print(i[0], i[1])
+        # print('\nНачнем тест - дается время 10 мин')
+        # for i in range(5, 0, -1):
+        #     # os.system("cls")
+        #     print(i, end=' ')
+        #     sleep(1)
+
         return self.questions_in_test
 
-    def my_metods(self):
+    def my_metods(self, dt, answers):
+        """
+        Сбор информации о дате сдаче, номера теста, и отвеченных вопросах,
+        записи ее в БД и подсчета результата
+
+        :param dt:
+        :param answers:
+        :return: (dt,self.test_number, answers)
+        """
+        self.dt = dt
+        self.answers = str(answers)
+
+        # здесь сделать слияние для БД и расчета результата теста
+        # ввод (дата, номер теста, ответы) - в БД - для хранения
+        # разбор ответов - пока только в Да или нет и в %
+        print(self.dt, self.test_number, self.answers)
+        print('я здесь')
+        return self.dt, self.test_number, self.answers
+
+    def save_in_base(self):
+        with self.conn.cursor() as cur:
+            cur.execute(f"""INSERT INTO public."result" (id,id_user,id_test,answer,date_test)
+	            VALUES (1,8,{self.test_number},'{self.answers}','{self.dt}');""")
+            self.conn.commit()
+
+    def result_test(self):
         pass
 
 
@@ -171,23 +202,23 @@ class Test:
         self.if_user = new_user.get_profile()
         self.t = Testsystem()
         self.v = QuestionView()
-        data = self.t.questions_in_test
-        self.v.render(data)
+        data = self.t.show_questions()
+        self.dt = time.strftime("%Y-%m-%d %H:%M", time.localtime())
+        self.answers = self.v.render(data)
+        self.t.my_metods(self.dt, self.answers)
+        self.t.save_in_base()
 
     def get_list(self) -> list:
         """
         Возврат 5 случайных тестов
         :return:
         """
-        # conn = Db('testsystem', 'testsystem', '1234test')
-        # conn = conn.get_connection()
         with self.conn.cursor() as cur:
             cur.execute(f"""SELECT id_test, theme FROM public."test";
                 """)
             list = cur.fetchall()
             random_list = random.sample(list, 5)
             random_list.sort()
-
         return random_list
 
     def get_questions(self, number):
@@ -196,15 +227,11 @@ class Test:
              test_question tq on t.id_test =tq.id_test left join question q on tq.id_question =q.id_question 
              where t.id_test ={number};""")
             res_login = cur.fetchall()
-
         return res_login
 
 
 # View
 class View:  # abstract
-    def __init__(self):
-        self.conn = Db('testsystem', 'testsystem', '1234test').get_connection()
-
     def render(self):
         pass
 
@@ -212,20 +239,38 @@ class View:  # abstract
 class ListView(View):
     def render(self):
         print()
-        v_list = Testsystem
-        # print('Выберите номер теста')  # in View
-        # for key in v_list.show_list():
-        #     print(key[0], '-', key[1])
-        # print("\034", end="")
-        # self.test_number = input()
-        # print(v_list.show_list())
-        # return self.test_number
 
 
 class QuestionView(View):
+    def __init__(self):
+        self.conn = Db('testsystem', 'testsystem', '1234test').get_connection()
+        self.answer = None
+
     def render(self, data):
-        for i in data:
-            print(i[0],i[1])
+        print(' ' * 30)
+        in_bd = []
+        for n in data:
+            # print(n[0])
+            print('Вопрос', n[1])
+            print('Выберите ответ:')
+            with self.conn.cursor() as cur:
+                print()
+                cur.execute(f"""select a.n_answer ,a.answer_text from question q inner join answer 
+                a on q.id_question = a.id_question where q.id_question ={n[0]} order by a.n_answer asc ;""")
+                res_login = cur.fetchall()
+                for i in res_login:
+                    print(i[0], i[1])
+            try:
+                self.answer = input()
+            except:
+                print('Выберите один вариант')
+            in_bd.append(n[0])
+            in_bd.append(int(self.answer))
+            # in_bd[n[0]] = self.answer
+            print(in_bd)
+            print('Ответ принят')
+        print('Тест окончен\n')
+        return in_bd
 
 
 class RegistrationView(View):
