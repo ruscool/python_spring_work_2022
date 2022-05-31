@@ -6,6 +6,7 @@ import bcrypt
 import psycopg2 as ps
 from datetime import datetime as dtime
 import datetime
+from abc import ABC, abstractmethod
 
 
 class Db:
@@ -128,12 +129,6 @@ class Testsystem:
         self.num_list = self.show_list()
         self.conn = Db('testsystem', 'testsystem', '1234test').get_connection()
 
-        # self.show_questions()
-
-    # def res_from_QV(self, *args):
-    #     self.questions_from_bd = list(args)
-    #     print('form_bd',self.questions_from_bd)
-
     def show_list(self):
         data = Test()
         self.data = data.get_list()
@@ -162,11 +157,9 @@ class Testsystem:
             print(i[0], i[1])
         print('\nНачнем тест - дается время 10 мин')
         for i in range(5, 0, -1):
-            # os.system("cls")
             print(i, end=' ')
             sleep(0.1)
         self.dt = dtime.now().timestamp()
-        # self.dt = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
         return self.questions_in_test
 
@@ -197,17 +190,18 @@ class Testsystem:
             self.conn.commit()
 
     def result_test(self):
-        # nn=time.strftime("%M:%S", time.localtime(end_dt - self.dt))
         end_dt = int(self.for_result[-1])
-        # end_dt = dtime.strptime(self.for_result[-1], "%M:%S")
-        # end_dt = time.strftime("%Y-%m-%d %H:%M", self.for_result[-1])
         how_long = int(end_dt - self.dt)
         nn = time.strftime("%M:%S", time.localtime(how_long))
         print(' ' * 30)
-
         print(f'Тест пройдет за {nn}')
-
+        print(self.for_result)
+        if sum(self.for_result[2:-1:3]) / 10 * 100 > 75:
+            test = 'Сдан'
+        else:
+            test = 'Не сдан'
         print(f'Результаты теста')
+        print(f'Правильно на {sum(self.for_result[2:-1:3]) / 10 * 100} процентов, тест - {test}')
 
 
 class Test:
@@ -223,7 +217,6 @@ class Test:
         self.v = QuestionView()
         data = self.t.show_questions()
         self.get_questions()
-        # self.dt = time.strftime("%Y-%m-%d %H:%M", time.localtime())
         self.answers = self.v.render(data)
         self.t.my_metods(self.answers)
         # self.t.save_in_base()
@@ -254,7 +247,8 @@ class Test:
 
 
 # View
-class View:  # abstract
+class View(ABC):  # abstract
+    @abstractmethod
     def render(self):
         pass
 
@@ -293,17 +287,19 @@ class QuestionView(View):
                 st = 0
                 self.answer = int(input())
                 l_num = [1, 2, 3]
-                if self.answer not in l_num:
+                try:
+                    if self.answer not in l_num:
+                        print('Выберите из списка по номеру')
+                    else:
+                        st = 1
+                        in_bd.append(n[0])
+                        in_bd.append(int(self.answer))
+                        in_bd.append(int(per))
+                        # print('after del:', in_bd)
+                        print('Ответ принят\n')
+                except:
                     print('Выберите из списка по номеру')
-                else:
-                    st = 1
-                    in_bd.append(n[0])
-                    in_bd.append(int(self.answer))
-                    in_bd.append(int(per))
-                    print('after del:', in_bd)
-                    print('Ответ принят')
         self.end_dt = dtime.now().timestamp()
-        # self.end_dt = time.strftime("%Y-%m-%d %H:%M", time.localtime())
         in_bd.append(self.end_dt)
         print('Тест окончен\n')
         return in_bd
