@@ -8,8 +8,10 @@
 # class DB:
 #     __instance__ = None
 #
-#     def __init__(self):
-#         # Проверяем конструктор на сущ. экземпляр
+#     def __init__(self, name, user, password):
+#         self.name = name
+#         self.user = user
+#         self.password = password
 #         if DB.__instance__ is None:
 #             DB.__instance__ = self
 #         else:
@@ -21,6 +23,15 @@
 #         if not DB.__instance__:
 #             DB()
 #         return DB.__instance__
+#
+#     def get_connection(self):
+#         with ps.connect(f"dbname={self.name} user={self.user} password={self.password}") as self.conn:
+#             with self.conn.cursor() as cur:
+#                 cur.execute(f"""SELECT *  FROM profile
+#                     """)
+#                 res = cur.fetchall()
+#
+#         return self.conn
 
 
 # 2.
