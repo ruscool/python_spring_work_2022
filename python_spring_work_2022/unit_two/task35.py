@@ -4,7 +4,7 @@ import time
 from time import sleep
 import bcrypt
 import psycopg2 as ps
-import os
+from datetime import datetime as dtime
 import datetime
 
 
@@ -123,11 +123,16 @@ class Auth:
 
 class Testsystem:
     def __init__(self):
+        self.dt = datetime.datetime.now()
         self.questions_in_test = None
         self.num_list = self.show_list()
         self.conn = Db('testsystem', 'testsystem', '1234test').get_connection()
 
         # self.show_questions()
+
+    # def res_from_QV(self, *args):
+    #     self.questions_from_bd = list(args)
+    #     print('form_bd',self.questions_from_bd)
 
     def show_list(self):
         data = Test()
@@ -151,18 +156,21 @@ class Testsystem:
         print('\n' * 30)
         print(f'Выбран тест под номером {self.test_number} и вопросы к нему')
         get = Test()
-        self.questions_in_test = get.get_questions(self.test_number)
+        self.questions_in_test = get.get_questions()
+
         for i in self.questions_in_test:
             print(i[0], i[1])
-        # print('\nНачнем тест - дается время 10 мин')
-        # for i in range(5, 0, -1):
-        #     # os.system("cls")
-        #     print(i, end=' ')
-        #     sleep(1)
+        print('\nНачнем тест - дается время 10 мин')
+        for i in range(5, 0, -1):
+            # os.system("cls")
+            print(i, end=' ')
+            sleep(0.1)
+        self.dt = dtime.now().timestamp()
+        # self.dt = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
         return self.questions_in_test
 
-    def my_metods(self, dt, answers):
+    def my_metods(self, answers):
         """
         Сбор информации о дате сдаче, номера теста, и отвеченных вопросах,
         записи ее в БД и подсчета результата
@@ -171,7 +179,8 @@ class Testsystem:
         :param answers:
         :return: (dt,self.test_number, answers)
         """
-        self.dt = dt
+        # self.dt = dt
+        self.for_result = answers
         self.answers = str(answers)
 
         # здесь сделать слияние для БД и расчета результата теста
@@ -188,7 +197,17 @@ class Testsystem:
             self.conn.commit()
 
     def result_test(self):
-        pass
+        # nn=time.strftime("%M:%S", time.localtime(end_dt - self.dt))
+        end_dt = int(self.for_result[-1])
+        # end_dt = dtime.strptime(self.for_result[-1], "%M:%S")
+        # end_dt = time.strftime("%Y-%m-%d %H:%M", self.for_result[-1])
+        how_long = int(end_dt - self.dt)
+        nn = time.strftime("%M:%S", time.localtime(how_long))
+        print(' ' * 30)
+
+        print(f'Тест пройдет за {nn}')
+
+        print(f'Результаты теста')
 
 
 class Test:
@@ -203,10 +222,12 @@ class Test:
         self.t = Testsystem()
         self.v = QuestionView()
         data = self.t.show_questions()
-        self.dt = time.strftime("%Y-%m-%d %H:%M", time.localtime())
+        self.get_questions()
+        # self.dt = time.strftime("%Y-%m-%d %H:%M", time.localtime())
         self.answers = self.v.render(data)
-        self.t.my_metods(self.dt, self.answers)
-        self.t.save_in_base()
+        self.t.my_metods(self.answers)
+        # self.t.save_in_base()
+        self.t.result_test()
 
     def get_list(self) -> list:
         """
@@ -219,15 +240,17 @@ class Test:
             list = cur.fetchall()
             random_list = random.sample(list, 5)
             random_list.sort()
+            # print(random_list)
         return random_list
 
-    def get_questions(self, number):
+    def get_questions(self):
         with self.conn.cursor() as cur:
-            cur.execute(f"""SELECT tq.id_question, q.question_text  FROM test t inner join
-             test_question tq on t.id_test =tq.id_test left join question q on tq.id_question =q.id_question 
-             where t.id_test ={number};""")
+            cur.execute(f"""select * from question q """)
             res_login = cur.fetchall()
-        return res_login
+            random_questions = random.sample(res_login, 10)
+            random_questions.sort()
+            # print(random_questions)
+        return random_questions
 
 
 # View
@@ -243,32 +266,45 @@ class ListView(View):
 
 class QuestionView(View):
     def __init__(self):
+        self.end_dt = None
         self.conn = Db('testsystem', 'testsystem', '1234test').get_connection()
         self.answer = None
 
     def render(self, data):
         print(' ' * 30)
         in_bd = []
+        print(data)
         for n in data:
-            # print(n[0])
             print('Вопрос', n[1])
             print('Выберите ответ:')
             with self.conn.cursor() as cur:
                 print()
-                cur.execute(f"""select a.n_answer ,a.answer_text from question q inner join answer 
-                a on q.id_question = a.id_question where q.id_question ={n[0]} order by a.n_answer asc ;""")
-                res_login = cur.fetchall()
-                for i in res_login:
+                cur.execute(f"""select a.num_answer ,a.answer_text,q.id_question,a.id_answer,a.r_answer 
+                from question q inner join answer 
+                a on q.id_question = a.id_question where q.id_question ={n[0]} order by a.id_answer asc ;""")
+                self.res_login = cur.fetchall()
+                per = 0
+                for i in self.res_login:
                     print(i[0], i[1])
-            try:
-                self.answer = input()
-            except:
-                print('Выберите один вариант')
-            in_bd.append(n[0])
-            in_bd.append(int(self.answer))
-            # in_bd[n[0]] = self.answer
-            print(in_bd)
-            print('Ответ принят')
+                    per = i[-1]
+            st = 0
+            # если нет номера такого ответа
+            while st != 1:
+                st = 0
+                self.answer = int(input())
+                l_num = [1, 2, 3]
+                if self.answer not in l_num:
+                    print('Выберите из списка по номеру')
+                else:
+                    st = 1
+                    in_bd.append(n[0])
+                    in_bd.append(int(self.answer))
+                    in_bd.append(int(per))
+                    print('after del:', in_bd)
+                    print('Ответ принят')
+        self.end_dt = dtime.now().timestamp()
+        # self.end_dt = time.strftime("%Y-%m-%d %H:%M", time.localtime())
+        in_bd.append(self.end_dt)
         print('Тест окончен\n')
         return in_bd
 
