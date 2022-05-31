@@ -30,7 +30,7 @@ class ParsText():
         req = requests.get(self.url)
         self.src = req.text
         # print(self.src)
-        with open('tests.html', 'w') as self.f:
+        with open('../../dev_my/tests.html', 'w') as self.f:
             self.f.write(self.src)
 
     def open_file(self):
@@ -38,7 +38,7 @@ class ParsText():
         Открытие файла на чтение
         :return:
         """
-        with open('test_text.txt', 'r') as file:
+        with open('../../dev_my/test_text.txt', 'r') as file:
             self.f = file.readlines()
 
     def list_create(self):
@@ -89,12 +89,11 @@ class ParsText():
                     'number': i[0][:index],
                     'question': i[0][index + 2:],
                     'r_answer': r_answer,
-                    'answer': i[row][2:],
-                    'num_answer': row
+                    'answer': i[row][2:]
                 })
                 for_num += 1
-        for o in self.new_base:
-            print(o)
+        # for o in self.new_base:
+        #     print(o)
 
     def only_quest(self):
         """
@@ -112,11 +111,11 @@ class ParsText():
             for_num += 1
         num_quest = 1
         # print(str(self.only_q[28]['question']))
-        with self.conn.cursor() as cur:  # работает
-            for k in self.only_q:
-                cur.execute(f"""INSERT INTO public.question (id_question,question_text)
-                                VALUES ({k['number']},'{str(k['question'])}');""")
-        self.conn.commit()
+        # with self.conn.cursor() as cur:  # работает
+        #     for k in self.only_q:
+        #         cur.execute(f"""INSERT INTO public.question (id_question,question_text)
+        #                         VALUES ({k['number']},'{str(k['question'])}');""")
+        # self.conn.commit()
         num_quest += 1
         # for o in self.only_q:
         #     print(o)
@@ -130,20 +129,18 @@ class ParsText():
             #     self.conn.commit()
             #     # count = 1
             num_answer = 1
-            # count_answers=len(self.l)
-            # print(count_answers)
             # with self.conn.cursor() as cur:
             for i in self.new_base:
+                # cur.execute(f"""select a.id_answer from public.answer a where a.id_answer=1;""")
+                # res_login = cur.fetchone()
                 # if res_login is None:
                 print(num_answer, i['answer'], i['number'], i['r_answer'])
-                cur.execute(f"""INSERT INTO public.answer (id_answer,answer_text,id_question,r_answer,num_answer)
-                                     VALUES ({num_answer},'{i['answer']}',{i['number']},
-                                        {i['r_answer']},{i['num_answer']});""")
+                cur.execute(f"""INSERT INTO public.answer (id_answer,answer_text,id_question,r_answer)
+                                     VALUES ({num_answer},'{i['answer']}',{i['number']},{i['r_answer']});""")
+                # else:
+                #     cur.execute(f"""INSERT INTO public.answer (answer_text,id_question,r_answer)
+                #                         VALUES ('{i['answer']}',{i['number']},{i['r_answer']});""")
                 self.conn.commit()
-                # cur.execute(f"""select count(*) from answer a where a.id_question = {};""")
-
-                # self.conn.commit()
-                # res_login = cur.fetchone()
                 num_answer += 1
 
     def save_to_json(self):
