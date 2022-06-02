@@ -35,6 +35,10 @@ from art import *
 
 
 class Db:
+    """
+    Подключение к БД
+    """
+
     def __init__(self, name, user, password):
         self.name = name
         self.user = user
@@ -66,6 +70,7 @@ class Profile(Db):
         self.login = login
         self.user_password = u_password
         self.get_connection()
+        self.get_profile()
 
     # в аргументе conn передается дискриптор подключения к БД
     def set_profile(self, f_name, ouch, l_name, age, tel, email):
@@ -96,7 +101,6 @@ class Profile(Db):
             except:
                 new_res_user = 1
                 self.conn.rollback()
-
             cur.execute(
                 f"""insert into public."user_man" (id_user,first_name, ouch, last_name, email, phone) values \
                 ({new_res_user},'{self.f_name}','{self.ouch}','{self.l_name}','{self.email}',{self.tel});""")
@@ -117,7 +121,8 @@ class Profile(Db):
                 data = str('Нет такого пользователя, хотите зарегистрироваться?')
                 return RegistrationView.render(RegistrationView, data, self.login, self.password)
             else:
-                valid = bcrypt.checkpw(self.password.encode(), res_login[1].encode())
+                valid = bcrypt.checkpw(self.user_password.encode(), res_login[1].encode())
+                print(self.password, self.user_password, valid)
                 if valid:
                     data = str(f'Вы вошли под пользователем {self.login}')
                     return LoginView.render(LoginView, data)
@@ -129,11 +134,6 @@ class Profile(Db):
 class Auth:
     def __init__(self):
         self.if_true = None
-
-    # self.conn = Db('testsystem', 'testsystem', '1234test').get_connection()
-    # self.is_auth = False
-    # self.login = login
-    # self.password = password
 
     def login(self, user) -> bool:
         """
@@ -147,9 +147,7 @@ class Auth:
         return self.is_auth
 
     def registration(self):
-        new_user = Profile('usr99', '1234test', 'Иван', 'Петрович', 'Сидоров', 29, 89234238937, 'ru@ru.com',
-                           'testsystem', 'testsystem', '1234test')
-        new_user.set_profile()
+
         self.is_auth = True
         return self.is_auth
 
@@ -158,9 +156,10 @@ class Auth:
 
 
 class Testsystem:
-    def __init__(self, data, s_quest):
+    def __init__(self, data, s_quest, user):
+        self.user = user
         self.data = data
-        self.dt = datetime.datetime.now()
+        self.dt_db = datetime.datetime.now()
         self.questions_in_test = s_quest
         self.num_list = self.show_list()
         self.conn = Db('testsystem', 'testsystem', '1234test').get_connection()
@@ -215,12 +214,40 @@ class Testsystem:
         return self.dt, self.test_number, self.answers
 
     def save_in_base(self):
+        """
+        Сохранение пройденного теста
+        :return:
+        """
         with self.conn.cursor() as cur:
+            cur.execute(f"""select p.id_profile,p.login  from profile p where p.login ='{self.user}'; """)
+            result_user = cur.fetchone()
             cur.execute(f"""INSERT INTO public."result" (id,id_user,id_test,answer,date_test)
-	            VALUES (1,8,{self.test_number},'{self.answers}','{self.dt}');""")
+	            VALUES ({self.test_id(id)},{result_user[0]},{self.test_number},'{self.answers}','{self.dt_db}');""")
             self.conn.commit()
 
+    @classmethod
+    def test_id(cls, id_result):
+        """
+        Проверка id
+
+        :return:
+        """
+        conn = Db('testsystem', 'testsystem', '1234test').get_connection()
+        with conn.cursor() as cur:
+            cur.execute("""select r.id from result r order by r.id desc limit 1;""")
+            result_id_result = cur.fetchone()
+            if result_id_result is None:
+                id_result = 1
+                return id_result
+            else:
+                id_result = int(result_id_result[0]) + 1
+                return id_result
+
     def result_test(self):
+        """
+        Проверка
+        :return:
+        """
         end_dt = int(self.for_result[-1])
         how_long = int(end_dt - self.dt)
         nn = time.strftime("%M:%S", time.localtime(how_long))
@@ -246,15 +273,16 @@ class Test:
 
     def run(self):
         if self.if_true == 1:
+            # self.user=Profile.
             self.five_list = self.get_list()
             self.count_questions = self.get_questions()
-            self.t = Testsystem(self.five_list, self.count_questions)
+            self.t = Testsystem(self.five_list, self.count_questions, self.login)
             self.v = QuestionView()
             data = self.t.show_questions()
             self.get_questions()
             self.answers = self.v.render(data)
             self.t.my_metods(self.answers)
-            # self.t.save_in_base()
+            self.t.save_in_base()
             self.t.result_test()
 
     def get_list(self) -> list:
@@ -312,7 +340,7 @@ class QuestionView(View):
                 a on q.id_question = a.id_question where q.id_question ={n[0]} order by a.id_answer asc ;""")
                 self.res_login = cur.fetchall()
                 per = 0
-                l_num=[]
+                l_num = []
                 for i in self.res_login:
                     print(i[0], i[1])
                     per = i[-1]
@@ -321,8 +349,8 @@ class QuestionView(View):
             # если нет номера такого ответа
             while st != 1:
                 st = 0
-                self.answer = QuestionView.test_answer(int(input()),l_num)
                 try:
+                    self.answer = self.test_answer(int(input()), l_num)
                     if self.answer not in l_num:
                         print('Выберите из списка по номеру')
                     else:
@@ -330,7 +358,6 @@ class QuestionView(View):
                         in_bd.append(n[0])
                         in_bd.append(int(self.answer))
                         in_bd.append(int(per))
-                        # print('after del:', in_bd)
                         print('Ответ принят\n')
                 except:
                     print('Выберите из списка по номеру')
@@ -340,10 +367,13 @@ class QuestionView(View):
         return in_bd
 
     @classmethod
-    def test_answer(cls, number,l_num):
-        if number in l_num:
+    def test_answer(cls, number, l_num):
+        if number is None:
+            pass
+        elif number in l_num:
             return True
         return False
+
 
 class RegistrationView(View):
     """В классе перегружаем виртуальный метод  render от родителя"""
@@ -365,7 +395,6 @@ class RegistrationView(View):
             new_user.set_profile(f_name, ouch, l_name, age, tel, e_mail)
 
 
-
 class LoginView(View):
     # new_user = Profile('usr89', '1234test', 'Иван', 'Петрович', 'Сидоров', 29, 89234238937, 'ru@ru.com',
     #                    'testsystem', 'testsystem', '1234test')
@@ -383,4 +412,4 @@ if __name__ == "__main__":
     login = input('Введите логин: ')
     password = input('Введите пароль: ')
     main = Profile(login, password)
-    main.get_profile()
+    # main.get_profile()
