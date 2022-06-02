@@ -42,3 +42,6 @@ https://shultais.education/blog/python-f-strings
 
 #### datetime - formats
 https://docs-python.ru/standart-library/modul-datetime-python/kody-formatirovanija-strftime-strptime-modulja-datetime/
+
+#### patterns
+https://refactoring.guru/ru/design-patterns/decorator/python/example
