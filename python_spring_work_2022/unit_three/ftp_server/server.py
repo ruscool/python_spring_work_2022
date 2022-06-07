@@ -2,85 +2,91 @@
 # # https://docs.python.org/3/library/socket.html#module-socket
 # # https://pythonist.ru/rabota-s-setevymi-soketami-na-python/
 import socket
-import os
+import datetime
 import list_dir
+from sys import platform
 
 
 class Ftp_mini_server:
-    # Дописать протокол передачи файла. Сперва разбираем
-    # HOST = ''  # Хост
-    # PORT = 50010  # Порт сервра
+    """
+    ftp_mini_server
+    """
 
-    # Создаем сокет
     def __init__(self):
+        self.dt = None
         self.HOST = ''
-        self.PORT = 50881
+        self.PORT = 50880
         self.addr = None
         self.conn = None
         self.format = 'utf-8'
         self.run()
 
     def run(self):
-        self.listen_server()
+        self.comp = self.listen_server()
+        self.logger(self.comp)
 
     def listen_server(self):
+        """
+        Основной метод - запуск и работа с клиентом
+        :return:
+        """
         print('-' * 50)
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind((self.HOST, self.PORT))
-            print(s)
             s.listen(5)
             self.conn, self.addr = s.accept()
             with self.conn:
                 print('self.connected by', self.addr)
-                count = 0
                 while True:
                     try:
-                        count += 1
-                        print(f'count = {count}')
                         self.list_files = list_dir.list_files()
-                        print(self.list_files)
-                        aa = str(self.list_files).encode('utf-8')
+                        self.req_file = str(self.list_files).encode('utf-8')
                         data = self.conn.recv(1024).decode('utf-8')  # .decode('utf-8')
-                        if not data:
-                            break
-                        print('что пришло:', data)
                         if len(data.split(' ')) > 1:
-                            request = data.split(' ')[1]  # запрос или имя файла
+                            self.request = data.split(' ')[1]  # запрос или имя файла
                         else:
-                            request = data
-                        print(f'request from client: {request},', type(request))
-                        self.path = './server_files/'
-                        if not request:
+                            self.request = data
+                        self.path = f'.{self.sys_tem()}server_files{self.sys_tem()}'
+                        if not self.request:
                             break
                         else:
-                            if request == 'list':
-                                print(f'to client {aa}')
-                                self.conn.sendall(aa)
-                                print('конец запроса')
+                            if self.request == 'list':
+                                self.conn.sendall(self.req_file)
                             else:
-                                file = f'{self.path}{request}'
+                                self.dt = datetime.datetime.now()
+                                file = f'{self.path}{self.request}'
                                 with open(file, "rb") as f:
                                     self.conn.sendfile(f)
-                                    # data = f.read()
-                                # print(repr(f))
-                                print(f'передача файла {request}')
-                                # self.conn.send('test'.encode(self.format))
-
-                                print('end send file')
-                                # f.close()
-                                # s.close()
-
-                            # file = 'server_files/opt-2.png'
-                            # with open('server_files/opt-2.png', 'rb') as f:
-                            #     file = f.readlines()
-                            #     # print(file[:10])
-                            #     self.conn.sendall(file)
-                            # self.conn.sendall(self.list_files)
                     except KeyboardInterrupt:
                         print('NO data, stop')
                         break
+                return self.dt, self.addr, file
+
+    @classmethod
+    def sys_tem(cls):
+        """
+        В зависимости от системы меняет '\' или '/'
+        :return: '\' или '/'
+        """
+        if platform == "linux" or platform == "linux2":
+            return '/'
+        elif platform == "darwin":
+            return '/'
+        elif platform == "win32":
+            return '\\'
+
+    def logger(self, comp: list):  # what need - data, ip, what
+        """
+        Запись в логгер - когда, с какого адреса заходил и что скачивал
+        :param comp: list
+        :return:
+        """
+        dt, ip, what = comp
+        print(comp, '\n', dt, ip, what)
+        with open('logger.txt', 'a') as f:
+            dt = dt.strftime('%d-%m-%Y_%H:%M:%S')
+            f.write(f'\n{dt}: {ip}{what}')
 
 
 if __name__ == '__main__':
     start = Ftp_mini_server()
-

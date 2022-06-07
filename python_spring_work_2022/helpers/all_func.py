@@ -30,3 +30,5 @@ def insert_time_in_header_file():
 
 
 
+a=insert_time_in_header_file()
+print(a)

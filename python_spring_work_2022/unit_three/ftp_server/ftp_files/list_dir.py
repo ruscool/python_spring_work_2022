@@ -6,5 +6,5 @@ def list_files():
     # print(list_f)
     return list_f
 
-if __name__ == '__main__':
-    list_files()
+
+list_files()
