@@ -5,7 +5,7 @@ import socket
 class Ftp_client:
     def __init__(self):
         self.HOST = '127.0.0.1'
-        self.PORT = 50880
+        self.PORT = 50881
         self.path = './ftp_files/'
         self.run()
 
@@ -33,23 +33,38 @@ class Ftp_client:
             print('end...load list')
 
             # 2
-            file_f = str(input("Выберите файл:"))
-            zapros = f'GET {file_f}'.encode('utf-8')
-            print('to_server ', zapros)
-            self.s.send(zapros)
+            try:
+                file_f = str(input("Выберите файл:"))
+                zapros = f'GET {file_f}'.encode('utf-8')
+                print('to_server ', zapros)
+                self.s.send(zapros)
+            except:
+                print('Неправильный выбор')
 
             # 3 прием и запись файла
-            f = open(self.path + file_f, 'wb')
-            dd = self.s.recv(1024)
-            while dd:
-                f.write(dd)
+            with open(self.path + file_f, 'wb') as f:
                 dd = self.s.recv(1024)
-            f.close()
-            print(f'File loaded {file_f}')
+                print(f'dd-1 = {len(dd)}')
+                f.write(dd)
+                print(f'dd0 = {len(dd)}')
+                while len(dd) == 1024:
+                    dd = self.s.recv(1024)
+                    f.write(dd)
+                    print(f'dd1 = {len(dd)}')
 
+            # f.close()
+            print(f'File loaded {file_f}')
             print('end...load file')
-        # self.s.close()
-        return self.list_new
+
+            # 4 answer
+            # self.s.send('')
+
+            # self.s.close()
+        # return self.list_new
+
+    @classmethod
+    def verification(cls, inp):
+        pass
 
 
 if __name__ == '__main__':

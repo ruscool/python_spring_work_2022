@@ -14,7 +14,7 @@ class Ftp_mini_server:
     # Создаем сокет
     def __init__(self):
         self.HOST = ''
-        self.PORT = 50880
+        self.PORT = 50881
         self.addr = None
         self.conn = None
         self.format = 'utf-8'
@@ -41,6 +41,8 @@ class Ftp_mini_server:
                         print(self.list_files)
                         aa = str(self.list_files).encode('utf-8')
                         data = self.conn.recv(1024).decode('utf-8')  # .decode('utf-8')
+                        if not data:
+                            break
                         print('что пришло:', data)
                         if len(data.split(' ')) > 1:
                             request = data.split(' ')[1]  # запрос или имя файла
