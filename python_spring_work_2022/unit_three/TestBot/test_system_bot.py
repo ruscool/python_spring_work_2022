@@ -5,6 +5,7 @@ import requests
 
 TOKEN = "5333165895:AAFo9AFI53d92ZzcRZGO6X5ClqKS9BgTggg"
 bot = telebot.TeleBot(TOKEN)
+all_for_result = []
 
 
 class DB:
@@ -22,7 +23,7 @@ class DB:
 
     def __init__(self):
         self.name = 'testsystem'
-        self.user = 'testsystem'
+        self.user = 'postgres'
         self.password = "1234test"
 
     def get_connection(self) -> list:
@@ -101,8 +102,8 @@ def mes(message):
         keyboard3 = types.ReplyKeyboardMarkup(resize_keyboard=True).add(button1)
 
         q_list = question_list()
+        next_list = q_list.copy()
         len_questions = len(q_list)
-        in_bd = []
         quest = 1
 
         bot.send_message(message.chat.id, f'Вопрос {quest}', reply_markup=keyboard3)
@@ -115,24 +116,35 @@ def mes(message):
 
         len_answers = len(res_login)
         l_num = []
-        bot.send_message(message.chat.id, q_list[0][1])
+
+        keyboard_li = types.InlineKeyboardMarkup()
         for i in res_login:
             in_menu = f'{i[0]} {i[1]}'
             l_num.append(in_menu)
-            bot.send_message(message.chat.id, f'{i[0]} {i[1]}')  # quiestion
+            menu_answer = types.InlineKeyboardButton(text=f'{i[0]} {i[1]}', callback_data='1')
+            keyboard_li.add(menu_answer)
+
+        # keyboard_li.add(*l_num)
+        bot.send_message(message.chat.id, q_list[0][1])
+        bot.send_message(message.chat.id, f'Выберите ответ {l_num}', reply_markup=keyboard_li)  # quiestion
         quest += 1
-        if quest == 11:
-            print('11')
-            quest = 1
+        l=10
+        return q_list[quest - 1]
+
+        # if quest == 11:
+        #     print('11')
+        #     quest = 1
+        # else:
+        #     bot.reply_backend.handlers
     elif message.text == 'Статистика':
         bot.send_message(message.chat.id, 'Извините - в разработке :)')
     elif message.text == 'Погода в Спб':
         gradus = weather()
         gradus = float('{:.1f}'.format(gradus))
         printing = f'Температура в Санкт Петербурге {gradus}°'
-        # printing = f'Температура в Санкт Петербурге', "%.1f" % gradus, 'градусов'
         bot.send_message(message.chat.id, printing)
     elif message.text == 'Назад':
+        bot.send_message(message.chat.id, "Данные теста потеряны...")
         bot.send_message(message.chat.id, "Добро пожаловать в ТестСистем")
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
         button_1 = types.KeyboardButton('Тест')
@@ -144,16 +156,18 @@ def mes(message):
         # bot.send_message(message.chat.id, message) # print all in text - verify
 
 
-# @bot.message_handler(func=lambda message: True)
-# def echo_all(message):
-#     bot.reply_to(message, message.text)
-#     # bot.send_message()
+@bot.callback_query_handler(func=lambda call: True)
+def callback_worker(call):
+    if call.data == '1':
+        all_for_result.append(call.data)
+        print(all_for_result)
+        # Отправляем текст в Телеграм
+        bot.send_message(call.message.chat.id, f'Ответ принят {all_for_result}')
+        # bot.callback_query_handler()
 
 
 # bot.polling(non_stop=True)
 if __name__ == '__main__':
-    # start = Main()
-    # bot.infinity_polling()
     test_db = DB()
     db = test_db.get_connection()
     bot.polling(non_stop=True)
