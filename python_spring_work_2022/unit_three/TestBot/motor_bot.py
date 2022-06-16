@@ -3,6 +3,7 @@ from telebot import types
 import requests
 from connect_db import name, user, password
 
+
 # name = 'testsystem'
 # user = 'testsystem'
 # password = "1234test"
@@ -64,6 +65,106 @@ class Dbquerry:
         return self.len_answers, self.result[0][0], self.res_login
 
 
+class Cycles:
+    pass
+
+
+class Logger:  # будет собирать и проверять инфу через БД
+    def __init__(self, conn):
+        self.answer = None
+        self.answer_for = None
+        self.r_answer = None
+        # self.anwer = None
+        self.quest = None
+        self.id_user = None
+        self.q = None
+        self.conn = conn
+
+    def verification_id(self, id_user):
+        self.id_user = id_user
+        with self.conn.cursor() as cur:
+            cur.execute(f"""select t.id_user from "temp" t where t.id_user = {self.id_user}""")
+            self.result_id = cur.fetchone()
+            print(self.result_id)
+            if self.result_id is None:
+                cur.execute(f"""INSERT INTO public."temp" (id_user) VALUES ({self.id_user});""")
+                self.conn.commit()
+                return 0
+            else:
+                return 1
+
+    def insert_question(self, q):
+        with self.conn.cursor() as cur:
+            self.q = q
+            cur.execute(f"""UPDATE public."temp" SET questions={self.q} WHERE id_user ={self.id_user};""")
+            cur.execute(f"""UPDATE public."temp" SET "check"=0 WHERE id_user ={self.id_user};""")
+            self.conn.commit()
+
+    def insert_number_question(self, quest):
+        with self.conn.cursor() as cur:
+            self.quest = quest
+            cur.execute(f"""UPDATE public."temp" SET number_question={self.quest} WHERE id_user ={self.id_user};""")
+            self.conn.commit()
+
+    def insert_answer(self, answer):
+        with self.conn.cursor() as cur:
+            self.answer = answer
+            cur.execute(f"""UPDATE public."temp" SET number_question={self.quest} WHERE id_user ={self.id_user};""")
+            self.conn.commit()
+
+    def new_test(self):
+        with self.conn.cursor() as cur:
+            # cur.execute(f"""select ta.id from temp_answers ta where id_user_temp ={self.id_user};""")
+            # self.result = cur.fetchone()
+            print('cur')
+            # if res is not None:
+            cur.execute(f"""DELETE FROM public.temp_answers WHERE id_user_temp ={self.id_user};""")
+            cur.execute(f"""DELETE FROM public.temp WHERE id_user ={self.id_user};""")
+            #     self.conn.commit()
+            # else:
+            #     return 0
+
+    def continuation(self):
+        pass
+
+    def save_number_quiestion(self, number, r_answer):
+        with self.conn.cursor() as cur:
+            self.number = number
+            self.r_answer = r_answer
+            cur.execute(f"""UPDATE public."temp" SET "check"=1 WHERE id_user={self.id_user};""")
+            cur.execute(
+                f"""INSERT INTO public.temp_answers (id_question,id_user_temp,r_answer) 
+                VALUES ({self.number},{self.id_user},{self.r_answer});""")
+            self.conn.commit()
+
+    def for_answers(self):
+        with self.conn.cursor() as cur:
+            cur.execute(f"""select ta.id_question from temp_answers ta where id_user_temp ={self.id_user}""")
+            res = cur.fetchone()
+            return res
+
+    def save_answer(self, answer):
+        with self.conn.cursor() as cur:
+            self.answer_for = answer
+            cur.execute(
+                f"""UPDATE public.temp_answers SET answer={self.answer_for} WHERE id_user_temp ={self.id_user};""")
+            cur.execute(
+                f"""UPDATE public."temp" SET "check"=0 WHERE id_user={self.id_user};""")
+            self.conn.commit()
+
+    def verify_check(self):
+        with self.conn.cursor() as cur:
+            cur.execute(f"""select t."check" from "temp" t where id_user ={self.id_user}""")
+            res = cur.fetchone()
+            return res
+
+    def down(self):
+        with self.conn.cursor() as cur:
+            cur.execute(f"""select t."check" from "temp" t where id_user ={self.id_user}""")
+            res = cur.fetchone()
+            return res
+
+
 class Weather:
     def weather(self):
         lat = '59.9386300'
@@ -99,6 +200,11 @@ class Key_bot:
     def back(self):
         button1 = types.KeyboardButton('Назад')
         return button1
+
+    def down_menu(self):
+        button_2 = types.KeyboardButton('Следующий вопрос')
+        button_3 = types.KeyboardButton('Меню')
+        return button_2, button_3
 
 
 if __name__ == '__main__':

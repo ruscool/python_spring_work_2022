@@ -1,3 +1,3 @@
 name = 'testsystem'
-user = 'testsystem'
+user = 'postgres'
 password = "1234test"
