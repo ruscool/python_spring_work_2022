@@ -53,7 +53,9 @@ print('timedelta', datetime.timedelta(6.933253049850464))
 print('time now', datetime.datetime.now())
 now_time = datetime.datetime.now()
 stime = datetime.datetime.now().timestamp()  # перевод в timestamp !!!
-print('timestamp', stime)
+print('timestamp -', stime)
+new_s = stime + 60
+print('new_s=',datetime.datetime.fromtimestamp(new_s))
 new_t = now_time.strftime('%d/%m/%Y %I:%M:%S')
 print('format datetime', new_t)
 
@@ -68,6 +70,11 @@ time_2 = datetime.datetime.strptime(vv, "%M:%S")
 c = time_2 - time_1
 print(c)
 # bb=time.strptime(self.for_result[-1], "%M:%S")
+t1 = datetime.date.today().isoformat()
+print(t1)
 
+t2 = datetime.datetime.now().strftime('%H:%M:%S')
+print(t2)
 # nn=time.strftime("%M:%S", time.localtime(6.933253049850464))
 # print(nn)
+print('localtime', time.localtime().tm_min)

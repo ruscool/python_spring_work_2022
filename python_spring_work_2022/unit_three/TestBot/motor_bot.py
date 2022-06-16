@@ -72,6 +72,7 @@ class Cycles:
 class Logger:  # будет собирать и проверять инфу через БД
     def __init__(self, conn):
         self.answer = None
+        self.user = None
         self.answer_for = None
         self.r_answer = None
         # self.anwer = None
@@ -79,6 +80,11 @@ class Logger:  # будет собирать и проверять инфу че
         self.id_user = None
         self.q = None
         self.conn = conn
+
+    def load_id_user(self):
+        with self.conn.cursor() as cur:
+            cur.execute(f"""select t.id_user from "temp" t where t.id_user = {self.id_user}""")
+            self.result_id = cur.fetchone()
 
     def verification_id(self, id_user):
         self.id_user = id_user
@@ -103,7 +109,7 @@ class Logger:  # будет собирать и проверять инфу че
     def insert_number_question(self, quest):
         with self.conn.cursor() as cur:
             self.quest = quest
-            cur.execute(f"""UPDATE public."temp" SET number_question={self.quest} WHERE id_user ={self.id_user};""")
+            cur.execute(f"""UPDATE public."temp" SET number_question={self.quest} WHERE id_user ={self.user};""")
             self.conn.commit()
 
     def insert_answer(self, answer):
@@ -112,19 +118,27 @@ class Logger:  # будет собирать и проверять инфу че
             cur.execute(f"""UPDATE public."temp" SET number_question={self.quest} WHERE id_user ={self.id_user};""")
             self.conn.commit()
 
-    def new_test(self):
+    def new_test(self, user):
         with self.conn.cursor() as cur:
-            # cur.execute(f"""select ta.id from temp_answers ta where id_user_temp ={self.id_user};""")
-            # self.result = cur.fetchone()
-            print('cur')
-            # if res is not None:
-            cur.execute(f"""DELETE FROM public.temp_answers WHERE id_user_temp ={self.id_user};""")
-            cur.execute(f"""DELETE FROM public.temp WHERE id_user ={self.id_user};""")
-            #     self.conn.commit()
+            self.user = user
+            cur.execute(f"""select ta.id_user_temp from temp_answers ta where id_user_temp ={self.user};""")
+            self.result = cur.fetchone()
+            print('cur', self.id_user, self.user)
+            if self.result is not None:
+                print('not norrre', self.id_user, self.user)
+                cur.execute(f"""DELETE FROM public.temp_answers WHERE id_user_temp ={self.user};""")
+                cur.execute(f"""DELETE FROM public.temp WHERE id_user ={self.user};""")
+                self.conn.commit()
+            cur.execute(f"""select ta.id_user from temp ta where id_user ={self.user};""")
+            res_2 = cur.fetchone()
+            print(res_2, 'res2')
+            if res_2 is not None:
+                cur.execute(f"""DELETE FROM public.temp WHERE id_user ={self.user};""")
+
             # else:
             #     return 0
 
-    def continuation(self):
+    def continues(self):
         pass
 
     def save_number_quiestion(self, number, r_answer):
@@ -154,13 +168,20 @@ class Logger:  # будет собирать и проверять инфу че
 
     def verify_check(self):
         with self.conn.cursor() as cur:
-            cur.execute(f"""select t."check" from "temp" t where id_user ={self.id_user}""")
+            cur.execute(f"""select t."check" from "temp" t where id_user ={self.user}""")
             res = cur.fetchone()
             return res
 
     def down(self):
         with self.conn.cursor() as cur:
             cur.execute(f"""select t."check" from "temp" t where id_user ={self.id_user}""")
+            res = cur.fetchone()
+            return res
+
+    def questions_left(self, user):
+        self.user = user
+        with self.conn.cursor() as cur:
+            cur.execute(f"""select t.questions -t.number_question  from "temp" t where id_user = {self.user}""")
             res = cur.fetchone()
             return res
 
@@ -198,8 +219,9 @@ class Key_bot:
         return button_1, button_2, button_3
 
     def back(self):
+        button0 = types.KeyboardButton('Следующий вопрос')
         button1 = types.KeyboardButton('Назад')
-        return button1
+        return button0, button1
 
     def down_menu(self):
         button_2 = types.KeyboardButton('Следующий вопрос')

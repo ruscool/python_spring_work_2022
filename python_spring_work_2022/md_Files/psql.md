@@ -38,3 +38,13 @@ psql -U postgres -h localhost
 
 ***
 ***
+PostgreSQL Подключение, Пользователи (Роли) и Базы Данных
+
+Логин в только что установленный postgreSQL сервер нужно производить 
+    под именем пользователя postgres:
+
+sudo -i -u postgres
+psql
+
+###  смена пароля 
+https://djangocentral.com/how-to-fix-fatal-peer-authentication-failed-for-user-postgres-error/
