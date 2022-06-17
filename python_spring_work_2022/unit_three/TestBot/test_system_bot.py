@@ -82,7 +82,7 @@ def mes(message):
         q = logger.questions_left(message.from_user.id)
         end_quest = logger.for_end_test_per(message.from_user.id)
         # print(f'q ={q} , what quest = {end_quest}')
-        num_quest = logger.end_test()
+        num_quest = logger.end_test(message.from_user.id)
         # print(num_quest, 'num_quest')
         if q > 0:
             button1 = cl_menu_keyboard.back()
@@ -158,10 +158,10 @@ def cycle(message, keyboard_back, id_question, last_quest=0):
     l_num = []
 
     q_list = cl_querry.question_list(id_question)  # in DB
-    quest_in_db = logger.insert_number_question(quest)
+    quest_in_db = logger.insert_number_question(quest,message.chat.id)
 
     for_view = cl_querry.answers_and_question()
-
+    # print(for_view)
     bot.send_message(message.chat.id, q_list[0][1])
     # insert func - find last question + last quest {}
     res_login = []
@@ -169,12 +169,19 @@ def cycle(message, keyboard_back, id_question, last_quest=0):
     res_login = for_view[2:]
     keyboard_li = types.InlineKeyboardMarkup()
     for i in res_login[0]:
+        # str_i = 'qu'
+        # if len(i[1]) > 50:
+        #     str_i = str(i[1])
+        #     str_i = str_i[:50] + '\n' + str_i[50:]
+        # else:
+        #     str_i = i[1]
         in_menu = f'{i[1]}'
+        # print(f'{i[0]}, {len(i[1])}')
         l_num.append(in_menu)
         l_num.append(i[3])
         if i[3] == 1:
             logger.save_number_quiestion(i[2], i[0], message.chat.id)
-        menu_answer = types.InlineKeyboardButton(text=f'{in_menu}', callback_data=f'{i[2]}_{i[0]}')
+        menu_answer = types.InlineKeyboardButton(text=f'{in_menu}', callback_data=f'{i[2]}_{i[0]}', )
         keyboard_li.add(menu_answer)
     # for_next = bot.send_message(message.chat.id, f'Выберите ответ', reply_markup=keyboard_li)
     bot.send_message(message.chat.id, f'Выберите ответ', reply_markup=keyboard_li)

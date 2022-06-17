@@ -60,7 +60,7 @@ class Dbquerry:
                     a on q.id_question = a.id_question where q.id_question = {self.result[0][0]} order by a.id_answer asc ;""")
             self.res_login = cur.fetchall()
         self.len_answers = len(self.res_login)
-        for_view_bot = 1
+        # for_view_bot = 1
         # print()
         return self.len_answers, self.result[0][0], self.res_login
 
@@ -75,7 +75,6 @@ class Logger:  # будет собирать и проверять инфу че
         self.user = None
         self.answer_for = None
         self.r_answer = None
-        # self.anwer = None
         self.quest = None
         self.id_user = None
         self.q = None
@@ -105,6 +104,7 @@ class Logger:  # будет собирать и проверять инфу че
             # print(self.result_id)
             if self.result_id is None:
                 cur.execute(f"""INSERT INTO public."temp" (id_user) VALUES ({self.id_user});""")
+                cur.execute(f"""INSERT INTO public.id_people (id_user) VALUES ({self.id_user});""")
                 self.conn.commit()
                 return 0
             else:
@@ -119,10 +119,10 @@ class Logger:  # будет собирать и проверять инфу че
             cur.execute(f"""UPDATE public."temp" SET "all_quests"=0 WHERE id_user ={self.user};""")
             self.conn.commit()
 
-    def insert_number_question(self, quest):
+    def insert_number_question(self, quest, user):
         with self.conn.cursor() as cur:
             self.quest = quest
-            cur.execute(f"""UPDATE public."temp" SET number_question={self.quest} WHERE id_user ={self.user};""")
+            cur.execute(f"""UPDATE public."temp" SET number_question={self.quest} WHERE id_user ={user};""")
             self.conn.commit()
 
     def insert_answer(self, answer):
@@ -135,12 +135,13 @@ class Logger:  # будет собирать и проверять инфу че
         with self.conn.cursor() as cur:
             self.user = user
             cur.execute(f"""select ta.id_user_temp from temp_answers ta where id_user_temp ={self.user};""")
-            self.result = cur.fetchone()
+            result = cur.fetchone()
             # print('cur', self.id_user, self.user)
-            if self.result is not None:
+            if result is not None:
                 # print('not norrre', self.id_user, self.user)
                 cur.execute(f"""DELETE FROM public.temp_answers WHERE id_user_temp ={self.user};""")
-                cur.execute(f"""DELETE FROM public.temp WHERE id_user ={self.user};""")
+                cur.execute(
+                    f"""UPDATE public.temp SET questions=0,number_question=0,"check"=0,all_quests=0 WHERE id_user ={self.user};""")
                 self.conn.commit()
             cur.execute(f"""select ta.id_user from temp ta where id_user ={self.user};""")
             res_2 = cur.fetchone()
@@ -190,7 +191,7 @@ class Logger:  # будет собирать и проверять инфу че
             cur.execute(f"""UPDATE public."temp" SET "check"=0 WHERE id_user={user};""")
             self.conn.commit()
 
-    def verify_check(self):
+    def verify_check(self):  # ..
         with self.conn.cursor() as cur:
             cur.execute(f"""select t."check" from "temp" t where id_user ={self.user}""")
             res = cur.fetchone()
@@ -236,9 +237,9 @@ class Logger:  # будет собирать и проверять инфу че
     def saving_for_continues(self):
         pass
 
-    def end_test(self):
+    def end_test(self, user):
         with self.conn.cursor() as cur:
-            cur.execute(f"""select t.questions from "temp" t where id_user ={self.user};""")
+            cur.execute(f"""select t.questions from "temp" t where id_user ={user};""")
             res = cur.fetchone()
             res = list(res)
             return int(res[0])
