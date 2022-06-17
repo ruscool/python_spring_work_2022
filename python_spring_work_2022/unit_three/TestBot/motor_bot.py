@@ -81,10 +81,16 @@ class Logger:  # будет собирать и проверять инфу че
         self.q = None
         self.conn = conn
 
-    def load_id_user(self):
+    def quest_count(self):
         with self.conn.cursor() as cur:
-            cur.execute(f"""select t.id_user from "temp" t where t.id_user = {self.id_user}""")
+            cur.execute(f"""select t.all_quests  from "temp" t where id_user = {self.user};""")
             self.result_id = cur.fetchone()
+            res = list(self.result_id)
+            return int(res[0]) if int(res[0]) > 0 else 1
+
+    def save_count_quest(self, quest):
+        with self.conn.cursor() as cur:
+            cur.execute(f"""UPDATE public."temp" SET all_quests={quest} WHERE id_user={self.user};""")
 
     def verification_id(self, id_user):
         self.id_user = id_user
@@ -99,11 +105,13 @@ class Logger:  # будет собирать и проверять инфу че
             else:
                 return 1
 
-    def insert_question(self, q):
+    def insert_question(self, q, user_id):
         with self.conn.cursor() as cur:
+            self.user = user_id
             self.q = q
-            cur.execute(f"""UPDATE public."temp" SET questions={self.q} WHERE id_user ={self.id_user};""")
-            cur.execute(f"""UPDATE public."temp" SET "check"=0 WHERE id_user ={self.id_user};""")
+            cur.execute(f"""UPDATE public."temp" SET questions={self.q} WHERE id_user ={self.user};""")
+            cur.execute(f"""UPDATE public."temp" SET "check"=0 WHERE id_user ={self.user};""")
+            cur.execute(f"""UPDATE public."temp" SET "all_quests"=0 WHERE id_user ={self.user};""")
             self.conn.commit()
 
     def insert_number_question(self, quest):
@@ -155,15 +163,15 @@ class Logger:  # будет собирать и проверять инфу че
         with self.conn.cursor() as cur:
             cur.execute(f"""select ta.id_question from temp_answers ta where id_user_temp ={self.id_user}""")
             res = cur.fetchone()
-            return res
+            res = list(res)
+            return res[0]
 
     def save_answer(self, answer):
         with self.conn.cursor() as cur:
             self.answer_for = answer
             cur.execute(
                 f"""UPDATE public.temp_answers SET answer={self.answer_for} WHERE id_user_temp ={self.id_user};""")
-            cur.execute(
-                f"""UPDATE public."temp" SET "check"=0 WHERE id_user={self.id_user};""")
+            cur.execute(f"""UPDATE public."temp" SET "check"=0 WHERE id_user={self.id_user};""")
             self.conn.commit()
 
     def verify_check(self):
@@ -180,10 +188,30 @@ class Logger:  # будет собирать и проверять инфу че
 
     def questions_left(self, user):
         self.user = user
+        print(f'user= {self.user}')
         with self.conn.cursor() as cur:
-            cur.execute(f"""select t.questions -t.number_question  from "temp" t where id_user = {self.user}""")
+            cur.execute(f"""select t.questions -t.number_question  from "temp" t where id_user = {self.user};""")
             res = cur.fetchone()
-            return res
+            res = list(res)
+            return int(res[0])
+
+    def for_end_test_per(self,user):
+        self.user = user
+        with self.conn.cursor() as cur:
+            cur.execute(f"""select t.number_question from "temp" t where id_user = {self.user};""")
+            res = cur.fetchone()
+            res = list(res)
+            return int(res[0])
+
+    def saving_for_continues(self):
+        pass
+
+    def end_test(self):
+        with self.conn.cursor() as cur:
+            cur.execute(f"""select t.questions from "temp" t where id_user ={self.user};""")
+            res = cur.fetchone()
+            res = list(res)
+            return int(res[0])
 
 
 class Weather:
@@ -227,6 +255,10 @@ class Key_bot:
         button_2 = types.KeyboardButton('Следующий вопрос')
         button_3 = types.KeyboardButton('Меню')
         return button_2, button_3
+
+    def end_test(self):
+        button_1 = types.KeyboardButton('Завершить тест')
+        return button_1
 
 
 if __name__ == '__main__':
