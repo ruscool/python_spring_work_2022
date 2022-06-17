@@ -21,8 +21,12 @@ def send_welcome(message):
 
 
 @bot.message_handler(commands=['help'])
-def helper():
-    pass
+def helper(message):
+    buttons = cl_menu_keyboard.start_menu()
+    # bot.send_message(message.chat.id, message)  # for test
+    bot.send_message(message.chat.id, f"{message.from_user.first_name}, добро пожаловать в ТестСистем")
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3).add(*buttons)
+    bot.send_message(message.chat.id, "В разработке...", reply_markup=markup)
 
 
 @bot.message_handler(content_types=['text'])
@@ -77,11 +81,9 @@ def mes(message):
     elif message.text == 'Следующий вопрос':
         q = logger.questions_left(message.from_user.id)
         end_quest = logger.for_end_test_per(message.from_user.id)
-
-        print(f'q ={q} , what quest = {end_quest}')
-        # получить номер вопроса
+        # print(f'q ={q} , what quest = {end_quest}')
         num_quest = logger.end_test()
-        print(num_quest, 'num_quest')
+        # print(num_quest, 'num_quest')
         if q > 0:
             button1 = cl_menu_keyboard.back()
             keyboard_back = types.ReplyKeyboardMarkup(resize_keyboard=True).add(*button1)
@@ -97,37 +99,73 @@ def mes(message):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3).add(*buttons)
         bot.send_message(message.chat.id, 'Начнем тестирование - выберите Тест', reply_markup=markup)
     elif message.text == 'Продолжить':
-        bot.send_message(message.chat.id, "Доделать переход")
+        q = logger.questions_left(message.from_user.id)
+        last_quest = logger.last_question(message.from_user.id)
+        button1 = cl_menu_keyboard.back()
+        keyboard_back = types.ReplyKeyboardMarkup(resize_keyboard=True).add(*button1)
+        cycle(message, keyboard_back, q, last_quest)
+
+        # bot.send_message(message.chat.id, "Доделать переход")
     elif message.text == 'Новый тест':
         bot.send_message(message.chat.id, "Данные теста потеряны...\n\nДобро пожаловать в ТестСистем")
         res = logger.new_test(message.from_user.id)
         buttons = cl_menu_keyboard.start_menu()
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3).add(*buttons)
         bot.send_message(message.chat.id, 'Начнем тестирование - выберите Тест', reply_markup=markup)
-
-        # bot.send_message(message.chat.id, message) # print all in text - verify
+    elif message.text == 'Выйти':
+        bot.send_message(message.chat.id, "Можете продолжить позже")
+        res = logger.new_test(message.from_user.id)
+        buttons = cl_menu_keyboard.start_menu()
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3).add(*buttons)
+        bot.send_message(message.chat.id, 'Главное меню', reply_markup=markup)
 
 
 def end_test(message, keyboard_back):
-    bot.send_message(message.chat.id, 'Результаты теста //made...', reply_markup=keyboard_back)
+    plus = 0
+    list_answers = logger.result_plus(message.chat.id)
+    len_answers = len(list_answers)
+    sum_list = sum(list_answers)
+    test = 'Не сдан'
+    try:
+        if sum_list * 100 / len_answers >= 60:
+            test = 'Сдан'
+    except:
+        test = 'Не сдан'
+
+    # print(f'{list_answers} {len_answers}')
+    bot.send_message(message.chat.id,
+                     f'Результаты теста\n\nПравильных ответов {sum_list} из {len_answers}\n\nТест {test}',
+                     reply_markup=keyboard_back)
     return 0
 
 
 # @bot.message_handler()
-def cycle(message, keyboard_back, id_question):
+def cycle(message, keyboard_back, id_question, last_quest=0):
     # check = logger.verify_check()
     # check = check[0]
-
+    all_res = []
     quest = logger.quest_count()
+    for_one = []
+    if last_quest > 0:
+        # print(f'last_q= {last_quest}')
+        all_res = logger.one_and_last_quest(last_quest)
+        quest = logger.for_end_test_per(message.chat.id)
+        for_one.append(quest)
+        last_quest = 0
+        # print(f'last_q= {last_quest}')
+
     bot.send_message(message.chat.id, f'Вопрос {quest}', reply_markup=keyboard_back)
     l_num = []
-    # print(f'message = {message}')
+
     q_list = cl_querry.question_list(id_question)  # in DB
     quest_in_db = logger.insert_number_question(quest)
-    # print(q_list)
+
     for_view = cl_querry.answers_and_question()
-    # print(f'вопросы = {for_view}')
+
     bot.send_message(message.chat.id, q_list[0][1])
+    # insert func - find last question + last quest {}
+    res_login = []
+    res_login = all_res
     res_login = for_view[2:]
     keyboard_li = types.InlineKeyboardMarkup()
     for i in res_login[0]:
@@ -135,12 +173,12 @@ def cycle(message, keyboard_back, id_question):
         l_num.append(in_menu)
         l_num.append(i[3])
         if i[3] == 1:
-            logger.save_number_quiestion(i[2], i[0])
+            logger.save_number_quiestion(i[2], i[0], message.chat.id)
         menu_answer = types.InlineKeyboardButton(text=f'{in_menu}', callback_data=f'{i[2]}_{i[0]}')
         keyboard_li.add(menu_answer)
     # for_next = bot.send_message(message.chat.id, f'Выберите ответ', reply_markup=keyboard_li)
     bot.send_message(message.chat.id, f'Выберите ответ', reply_markup=keyboard_li)
-    print(l_num)
+    # print(l_num)
     quest += 1
     logger.save_count_quest(quest)
     check = 1
@@ -150,28 +188,30 @@ def cycle(message, keyboard_back, id_question):
 
 @bot.callback_query_handler(func=lambda call: True, )
 def callback_worker(call):
-    print(f'call= {call.data}')
+    # print(f'call= {call.data}')
     if call.data != 'callback_worker':
         # wq = cycle(None, None, None, None, 'callback_worker')  # на память
-        print('call data ', call.data)
+        # print('call data ', call.data)
         q_answer = str(call.data)
         q_answer = list(q_answer.split('_'))
         answer = int(q_answer[1])
         q_answer = int(q_answer[0])
-        q_in_db = logger.for_answers()
-        print(q_answer, q_in_db)
-        ans_in_db = logger.save_answer(answer)
-        print(ans_in_db, 'ans')
+        # print(call.from_user.id)
+        q_in_db = logger.for_answers(call.from_user.id)
+        # print(q_answer, q_in_db)
+        ans_in_db = logger.save_answer(answer, call.from_user.id)
+        # print(ans_in_db, 'ans')
         # сделать опрос есть ли ответ в вопросе -БД
-        if q_in_db is None:
-            bot.send_message(call.message.chat.id, f'Введите ответ')
-        if q_answer == q_in_db:
-            bot.send_message(call.message.chat.id, f'Ответ на данный вопрос уже был')
-        else:
-            down = logger.down()
-            print(f'down {down}')
-            bot.send_message(call.message.chat.id, f'Ответ принят')
-            # bot.register_next_step_handler(dd,mes)
+        bot.send_message(call.message.chat.id, f'Ответ принят')
+        # if q_in_db is None:
+        #     bot.send_message(call.message.chat.id, f'Введите ответ')
+        # if q_answer != q_in_db:
+        #     bot.send_message(call.message.chat.id, f'Ответ на данный вопрос уже был')
+        # else:
+        #     down = logger.down()
+        #     # print(f'down {down}')
+        #     bot.send_message(call.message.chat.id, f'Ответ принят')
+        #     # bot.register_next_step_handler(dd,mes)
 
 
 # bot.polling(non_stop=True)

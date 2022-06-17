@@ -61,7 +61,7 @@ class Dbquerry:
             self.res_login = cur.fetchall()
         self.len_answers = len(self.res_login)
         for_view_bot = 1
-        print()
+        # print()
         return self.len_answers, self.result[0][0], self.res_login
 
 
@@ -92,12 +92,17 @@ class Logger:  # будет собирать и проверять инфу че
         with self.conn.cursor() as cur:
             cur.execute(f"""UPDATE public."temp" SET all_quests={quest} WHERE id_user={self.user};""")
 
-    def verification_id(self, id_user):
+    def verification_id(self, id_user) -> int:
+        """
+
+        :param id_user: int
+        :return:
+        """
         self.id_user = id_user
         with self.conn.cursor() as cur:
             cur.execute(f"""select t.id_user from "temp" t where t.id_user = {self.id_user}""")
             self.result_id = cur.fetchone()
-            print(self.result_id)
+            # print(self.result_id)
             if self.result_id is None:
                 cur.execute(f"""INSERT INTO public."temp" (id_user) VALUES ({self.id_user});""")
                 self.conn.commit()
@@ -131,47 +136,58 @@ class Logger:  # будет собирать и проверять инфу че
             self.user = user
             cur.execute(f"""select ta.id_user_temp from temp_answers ta where id_user_temp ={self.user};""")
             self.result = cur.fetchone()
-            print('cur', self.id_user, self.user)
+            # print('cur', self.id_user, self.user)
             if self.result is not None:
-                print('not norrre', self.id_user, self.user)
+                # print('not norrre', self.id_user, self.user)
                 cur.execute(f"""DELETE FROM public.temp_answers WHERE id_user_temp ={self.user};""")
                 cur.execute(f"""DELETE FROM public.temp WHERE id_user ={self.user};""")
                 self.conn.commit()
             cur.execute(f"""select ta.id_user from temp ta where id_user ={self.user};""")
             res_2 = cur.fetchone()
-            print(res_2, 'res2')
+            # print(res_2, 'res2')
             if res_2 is not None:
                 cur.execute(f"""DELETE FROM public.temp WHERE id_user ={self.user};""")
 
-            # else:
-            #     return 0
+    def last_question(self, user) -> int:
+        """
+        Последний вопрос на котором вышел из теста
+        :return: int
+        """
 
-    def continues(self):
-        pass
-
-    def save_number_quiestion(self, number, r_answer):
         with self.conn.cursor() as cur:
-            self.number = number
-            self.r_answer = r_answer
-            cur.execute(f"""UPDATE public."temp" SET "check"=1 WHERE id_user={self.id_user};""")
             cur.execute(
-                f"""INSERT INTO public.temp_answers (id_question,id_user_temp,r_answer) 
-                VALUES ({self.number},{self.id_user},{self.r_answer});""")
-            self.conn.commit()
-
-    def for_answers(self):
-        with self.conn.cursor() as cur:
-            cur.execute(f"""select ta.id_question from temp_answers ta where id_user_temp ={self.id_user}""")
+                f"""select ta .id_question from temp_answers ta where id_user_temp
+                 ={user} order by ta.id desc limit 1;""")
             res = cur.fetchone()
             res = list(res)
             return res[0]
 
-    def save_answer(self, answer):
+    def continues(self):
+        pass
+
+    def save_number_quiestion(self, number, r_answer, user):
+        with self.conn.cursor() as cur:
+            self.number = number
+            self.r_answer = r_answer
+            cur.execute(f"""UPDATE public."temp" SET "check"=1 WHERE id_user={user};""")
+            cur.execute(
+                f"""INSERT INTO public.temp_answers (id_question,id_user_temp,r_answer) 
+                VALUES ({self.number},{self.user},{self.r_answer});""")
+            self.conn.commit()
+
+    def for_answers(self, user):
+        with self.conn.cursor() as cur:
+            cur.execute(f"""select ta.id_question from temp_answers ta where id_user_temp ={user}""")
+            res = cur.fetchone()
+            res = list(res)
+            return res[0]
+
+    def save_answer(self, answer, user):
         with self.conn.cursor() as cur:
             self.answer_for = answer
             cur.execute(
-                f"""UPDATE public.temp_answers SET answer={self.answer_for} WHERE id_user_temp ={self.id_user};""")
-            cur.execute(f"""UPDATE public."temp" SET "check"=0 WHERE id_user={self.id_user};""")
+                f"""UPDATE public.temp_answers SET answer={self.answer_for} WHERE id_user_temp ={user};""")
+            cur.execute(f"""UPDATE public."temp" SET "check"=0 WHERE id_user={user};""")
             self.conn.commit()
 
     def verify_check(self):
@@ -188,20 +204,34 @@ class Logger:  # будет собирать и проверять инфу че
 
     def questions_left(self, user):
         self.user = user
-        print(f'user= {self.user}')
+        # print(f'user= {self.user}')
         with self.conn.cursor() as cur:
             cur.execute(f"""select t.questions -t.number_question  from "temp" t where id_user = {self.user};""")
             res = cur.fetchone()
             res = list(res)
             return int(res[0])
 
-    def for_end_test_per(self,user):
+    def for_end_test_per(self, user):
         self.user = user
         with self.conn.cursor() as cur:
             cur.execute(f"""select t.number_question from "temp" t where id_user = {self.user};""")
             res = cur.fetchone()
             res = list(res)
             return int(res[0])
+
+    def one_and_last_quest(self, one) -> list:
+        """
+        вопрос с которого остановились и Оставшиеся вопросы
+        :return: list
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(f"""select * from question q where id_question ={one};""")
+            one_quest = cur.fetchone()
+            one_quest = list(one_quest)
+        with self.conn.cursor() as cur:
+            cur.execute(f"""select * from question q order by random() limit 9;""")
+            res = cur.fetchall()
+            return one_quest + res
 
     def saving_for_continues(self):
         pass
@@ -212,6 +242,25 @@ class Logger:  # будет собирать и проверять инфу че
             res = cur.fetchone()
             res = list(res)
             return int(res[0])
+
+    def result_plus(self, user_id: int) -> list:
+        """
+        Возврат ответов и правильных ответов для сравнения
+        :param user:
+        :return:
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(f"""select ta.answer ,ta.r_answer  from temp_answers ta where id_user_temp ={user_id};""")
+            res = cur.fetchall()
+            # res = list(res)
+            result = []
+            two = []
+            for i in res:
+                if i[0] == i[1]:
+                    result.append(1)
+                else:
+                    result.append(0)
+            return result
 
 
 class Weather:
@@ -240,6 +289,11 @@ class Key_bot:
         button_2 = types.KeyboardButton('Новый тест')
         return button_1, button_2
 
+    def next_back(self):
+        button_1 = types.KeyboardButton('Продолжить')
+        button_2 = types.KeyboardButton('Выйти')
+        return button_1, button_2
+
     def start_menu(self):
         button_1 = types.KeyboardButton('Тест')
         button_2 = types.KeyboardButton('Статистика')
@@ -253,8 +307,9 @@ class Key_bot:
 
     def down_menu(self):
         button_2 = types.KeyboardButton('Следующий вопрос')
+        button1 = types.KeyboardButton('Назад')
         button_3 = types.KeyboardButton('Меню')
-        return button_2, button_3
+        return button_2, button1, button_3
 
     def end_test(self):
         button_1 = types.KeyboardButton('Завершить тест')
@@ -264,8 +319,11 @@ class Key_bot:
 if __name__ == '__main__':
     a = DB(name, user, password)
     # print(a.get_connection())
+    conn = a.get_connection()
     qa = Dbquerry()
     # print(qa.question_list(3))
     qa.question_list(3)
     ss = qa.answers_and_question()
-    print(ss)
+    # print(ss)
+    ll = Logger(conn)
+    print(ll.result_plus(383171406))
