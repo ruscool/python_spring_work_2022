@@ -80,12 +80,17 @@ class Logger:  # будет собирать и проверять инфу че
         self.q = None
         self.conn = conn
 
-    def quest_count(self):
+    def quest_count(self,user):
         with self.conn.cursor() as cur:
-            cur.execute(f"""select t.all_quests  from "temp" t where id_user = {self.user};""")
-            self.result_id = cur.fetchone()
-            res = list(self.result_id)
-            return int(res[0]) if int(res[0]) > 0 else 1
+            cur.execute(f"""select t.all_quests  from "temp" t where id_user = {user};""")
+            result_id = cur.fetchone()
+            # res = list(self.result_id)
+            if result_id[0] is None:
+                res = '1'
+                res = list(res)
+                return 1
+            else:
+                return int(result_id[0])
 
     def save_count_quest(self, quest):
         with self.conn.cursor() as cur:
@@ -104,7 +109,10 @@ class Logger:  # будет собирать и проверять инфу че
             # print(self.result_id)
             if self.result_id is None:
                 cur.execute(f"""INSERT INTO public."temp" (id_user) VALUES ({self.id_user});""")
-                cur.execute(f"""INSERT INTO public.id_people (id_user) VALUES ({self.id_user});""")
+                cur.execute(f'select ip.id_user from id_people ip where id_user ={self.id_user};')
+                result = cur.fetchone()
+                if result is None:
+                    cur.execute(f"""INSERT INTO public.id_people (id_user,"yes","no") VALUES ({self.id_user},0,0);""")
                 self.conn.commit()
                 return 0
             else:
@@ -116,14 +124,18 @@ class Logger:  # будет собирать и проверять инфу че
             self.q = q
             cur.execute(f"""UPDATE public."temp" SET questions={self.q} WHERE id_user ={self.user};""")
             cur.execute(f"""UPDATE public."temp" SET "check"=0 WHERE id_user ={self.user};""")
-            cur.execute(f"""UPDATE public."temp" SET "all_quests"=0 WHERE id_user ={self.user};""")
+            cur.execute(f"""UPDATE public."temp" SET "all_quests"=1 WHERE id_user ={self.user};""")
             self.conn.commit()
 
     def insert_number_question(self, quest, user):
         with self.conn.cursor() as cur:
             self.quest = quest
-            cur.execute(f"""UPDATE public."temp" SET number_question={self.quest} WHERE id_user ={user};""")
-            self.conn.commit()
+            if self.quest is None:
+                self.quest = 1
+                cur.execute(f"""UPDATE public."temp" SET number_question={self.quest} WHERE id_user ={user};""")
+                self.conn.commit()
+            else:
+                cur.execute(f"""UPDATE public."temp" SET number_question={self.quest} WHERE id_user ={user};""")
 
     def insert_answer(self, answer):
         with self.conn.cursor() as cur:
@@ -141,7 +153,7 @@ class Logger:  # будет собирать и проверять инфу че
                 # print('not norrre', self.id_user, self.user)
                 cur.execute(f"""DELETE FROM public.temp_answers WHERE id_user_temp ={self.user};""")
                 cur.execute(
-                    f"""UPDATE public.temp SET questions=0,number_question=0,"check"=0,all_quests=0 WHERE id_user ={self.user};""")
+                    f"""UPDATE public.temp SET questions=Null,number_question=Null,"check"=Null,all_quests=Null WHERE id_user ={self.user};""")
                 self.conn.commit()
             cur.execute(f"""select ta.id_user from temp ta where id_user ={self.user};""")
             res_2 = cur.fetchone()
@@ -160,8 +172,12 @@ class Logger:  # будет собирать и проверять инфу че
                 f"""select ta .id_question from temp_answers ta where id_user_temp
                  ={user} order by ta.id desc limit 1;""")
             res = cur.fetchone()
-            res = list(res)
-            return res[0]
+            if res is None:
+                res = '1'
+                res = list(res)
+                return res[0]
+            else:
+                return res[0]
 
     def continues(self):
         pass
@@ -209,16 +225,27 @@ class Logger:  # будет собирать и проверять инфу че
         with self.conn.cursor() as cur:
             cur.execute(f"""select t.questions -t.number_question  from "temp" t where id_user = {self.user};""")
             res = cur.fetchone()
-            res = list(res)
-            return int(res[0])
+            # print(self.user, res)
+            if res[0] is None:
+                res = '1'
+                # print(type(res), res)
+                res = list(res)
+                # print(type(res), res)
+                return int(res[0]) if res is not None else 1
+            else:
+                return int(res[0]) if res is not None else 1
 
     def for_end_test_per(self, user):
         self.user = user
         with self.conn.cursor() as cur:
             cur.execute(f"""select t.number_question from "temp" t where id_user = {self.user};""")
             res = cur.fetchone()
-            res = list(res)
-            return int(res[0])
+            if res[0] is None:
+                res = '1'
+                res = list(res)
+                return int(res[0])
+            else:
+                return int(res[0])
 
     def one_and_last_quest(self, one) -> list:
         """
@@ -262,6 +289,44 @@ class Logger:  # будет собирать и проверять инфу че
                 else:
                     result.append(0)
             return result
+
+    def save_statistic(self, sum_list, len_answers, user, test):
+        with self.conn.cursor() as cur:
+            cur.execute(f"""select ip."all"  from id_people ip where id_user ={user};""")
+            res = cur.fetchone()
+            if test == "Сдан":
+                cur.execute(f"""select ip."yes" from id_people ip where id_user ={user};""")
+                res = cur.fetchone()
+                if res is None:
+                    cur.execute(f"""UPDATE public.id_people SET "yes"=1 where id_user ={user};""")
+                else:
+                    test_yes = int(res[0]) + 1
+                    cur.execute(f"""UPDATE public.id_people SET "yes"={test_yes} where id_user ={user};""")
+            elif test == "Не сдан":
+                cur.execute(f"""select ip."no" from id_people ip where id_user ={user};""")
+                res = cur.fetchone()
+                if res[0] is None:
+                    cur.execute(f"""UPDATE public.id_people SET "no"=1 where id_user ={user};""")
+                else:
+                    test_no = int(res[0]) + 1
+                    cur.execute(f"""UPDATE public.id_people SET "no"={test_no} where id_user ={user};""")
+            self.conn.commit()
+            cur.execute(f"""select ip."yes" +ip."no"  from id_people ip where id_user ={user};""")
+            res = cur.fetchone()
+            cur.execute(
+                f"""UPDATE public.id_people SET "all"={res[0]},"last_yes"={sum_list},"last_all"={len_answers} where id_user ={user};""")
+            self.conn.commit()
+
+    def for_statistic(self, user) -> tuple:
+        """
+        Показ в статистику
+        :return: tuple
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"""select ip."all" ,ip."yes" ,ip.last_yes ,ip.last_all  from id_people ip where id_user ={user};""")
+            res = cur.fetchall()
+            return res
 
 
 class Weather:

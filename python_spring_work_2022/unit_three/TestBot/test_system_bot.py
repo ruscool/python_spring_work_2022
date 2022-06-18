@@ -63,10 +63,18 @@ def mes(message):
         keyboard_back = types.ReplyKeyboardMarkup(resize_keyboard=True).add(*button1)
         cycle(message, keyboard_back, q)
     elif message.text == 'Статистика':
-        bot.send_message(message.chat.id, 'Извините - в разработке :)')
-        with open('test_system.pdf', 'rb') as f:
-            image = f.read()
-        bot.send_photo(message.chat.id, image)
+        stat = logger.for_statistic(message.chat.id)
+        if len(stat) == 0:
+            bot.send_message(message.chat.id, f'У <b>Вас</b> еще нет данных по статистике', parse_mode='html')
+        else:
+            bot.send_message(message.chat.id,
+                             f'<b>Статистика</b>\n\n{message.from_user.first_name}, Вы сдавали Тест <b>{stat[0][0]}</b> раз,'
+                             f' из них успешно <b>{stat[0][1]}</b>\n\nКрайний раз результаты теста - '
+                             f'правильных ответов <b>{stat[0][2]}</b> из <b>{stat[0][3]}</b>', parse_mode="html")
+
+        # with open('test_system.pdf', 'rb') as f:
+        #     image = f.read()
+        # bot.send_photo(message.chat.id, image)
     elif message.text == 'Погода в Спб':
         loc_me = Weather()
         gradus = loc_me.weather()
@@ -136,6 +144,7 @@ def end_test(message, keyboard_back):
     bot.send_message(message.chat.id,
                      f'Результаты теста\n\nПравильных ответов {sum_list} из {len_answers}\n\nТест {test}',
                      reply_markup=keyboard_back)
+    save_statistic = logger.save_statistic(sum_list, len_answers, message.chat.id, test)
     return 0
 
 
@@ -144,9 +153,9 @@ def cycle(message, keyboard_back, id_question, last_quest=0):
     # check = logger.verify_check()
     # check = check[0]
     all_res = []
-    quest = logger.quest_count()
+    quest = logger.quest_count(message.chat.id)
     for_one = []
-    if last_quest > 0:
+    if int(last_quest) > 0:
         # print(f'last_q= {last_quest}')
         all_res = logger.one_and_last_quest(last_quest)
         quest = logger.for_end_test_per(message.chat.id)
@@ -158,7 +167,7 @@ def cycle(message, keyboard_back, id_question, last_quest=0):
     l_num = []
 
     q_list = cl_querry.question_list(id_question)  # in DB
-    quest_in_db = logger.insert_number_question(quest,message.chat.id)
+    quest_in_db = logger.insert_number_question(quest, message.chat.id)
 
     for_view = cl_querry.answers_and_question()
     # print(for_view)
@@ -185,12 +194,12 @@ def cycle(message, keyboard_back, id_question, last_quest=0):
         keyboard_li.add(menu_answer)
     # for_next = bot.send_message(message.chat.id, f'Выберите ответ', reply_markup=keyboard_li)
     bot.send_message(message.chat.id, f'Выберите ответ', reply_markup=keyboard_li)
-    # print(l_num)
+
     quest += 1
     logger.save_count_quest(quest)
     check = 1
     id_question -= 1
-    return quest
+    return 'Тест'
 
 
 @bot.callback_query_handler(func=lambda call: True, )
@@ -203,22 +212,9 @@ def callback_worker(call):
         q_answer = list(q_answer.split('_'))
         answer = int(q_answer[1])
         q_answer = int(q_answer[0])
-        # print(call.from_user.id)
         q_in_db = logger.for_answers(call.from_user.id)
-        # print(q_answer, q_in_db)
         ans_in_db = logger.save_answer(answer, call.from_user.id)
-        # print(ans_in_db, 'ans')
-        # сделать опрос есть ли ответ в вопросе -БД
         bot.send_message(call.message.chat.id, f'Ответ принят')
-        # if q_in_db is None:
-        #     bot.send_message(call.message.chat.id, f'Введите ответ')
-        # if q_answer != q_in_db:
-        #     bot.send_message(call.message.chat.id, f'Ответ на данный вопрос уже был')
-        # else:
-        #     down = logger.down()
-        #     # print(f'down {down}')
-        #     bot.send_message(call.message.chat.id, f'Ответ принят')
-        #     # bot.register_next_step_handler(dd,mes)
 
 
 # bot.polling(non_stop=True)
