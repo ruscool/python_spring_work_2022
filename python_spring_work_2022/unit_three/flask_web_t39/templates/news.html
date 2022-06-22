@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Flask test web{% endblock %}
+{% block head %}
+{{ super() }}
+<p><a name="news"></a></p>
+<h1>News</h1>
+{% endblock %}
+{% block content %}
+
+<p class="important">
+    Welcome to my awesome homepage.
+</p>
+<p><a href="/#start">Переход на главную страницу</a></p>
+{% for post in posts %}
+<a href="#">
+    <h2>{{ post['id'] }}</h2>
+    <span class="badge badge-primary">{{ post['title'] }}</span>
+</a>
+<p>{{ post['content'] }}</p>
+<hr>
+{% endfor %}
+{% endblock %}
